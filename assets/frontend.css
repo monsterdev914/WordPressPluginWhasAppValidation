@@ -1,0 +1,671 @@
+/* Frontend Styles for Contact Form WhatsApp Validation Plugin */
+
+/* Main Form Container */
+.cfwv-form-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Form Styles */
+.cfwv-form {
+    width: 100%;
+}
+
+.cfwv-field-wrapper {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.cfwv-field-wrapper.focused {
+    z-index: 1;
+}
+
+.cfwv-field-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333333;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.cfwv-required {
+    color: #e74c3c;
+    margin-left: 3px;
+}
+
+/* Field Styles */
+.cfwv-field {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e1e5e9;
+    border-radius: 6px;
+    font-size: 16px;
+    line-height: 1.5;
+    background: #ffffff;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.cfwv-field:focus {
+    outline: none;
+    border-color: #007cba;
+    box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.1);
+}
+
+.cfwv-field:hover {
+    border-color: #c3c4c7;
+}
+
+.cfwv-field.error {
+    border-color: #e74c3c;
+    background: #fef7f7;
+}
+
+.cfwv-field.valid {
+    border-color: #27ae60;
+    background: #f7fef7;
+}
+
+.cfwv-field[disabled] {
+    background: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* Textarea Specific */
+.cfwv-textarea {
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+}
+
+/* Select Specific */
+.cfwv-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 12px center;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    padding-right: 40px;
+    appearance: none;
+    cursor: pointer;
+}
+
+.cfwv-select::-ms-expand {
+    display: none;
+}
+
+/* WhatsApp Field Specific */
+.cfwv-whatsapp-field {
+    padding-left: 50px;
+    /* background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2325d366'%3e%3cpath d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488'/%3e%3c/svg%3e"); */
+    background-position: left 16px center;
+    background-repeat: no-repeat;
+    background-size: 20px;
+}
+
+/* WhatsApp Validation */
+.cfwv-whatsapp-validation {
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cfwv-whatsapp-validation.valid {
+    color: #27ae60;
+}
+
+.cfwv-whatsapp-validation.invalid {
+    color: #e74c3c;
+}
+
+.cfwv-whatsapp-validation::before {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.cfwv-whatsapp-validation.valid::before {
+    background: #27ae60;
+}
+
+.cfwv-whatsapp-validation.invalid::before {
+    background: #e74c3c;
+}
+
+/* Field Errors */
+.cfwv-field-error {
+    color: #e74c3c;
+    font-size: 13px;
+    margin-top: 6px;
+    display: block;
+    line-height: 1.4;
+}
+
+.cfwv-field-error:empty {
+    display: none;
+}
+
+/* Character Counter */
+.cfwv-char-counter {
+    font-size: 12px;
+    color: #6c757d;
+    text-align: right;
+    margin-top: 4px;
+}
+
+.cfwv-char-counter.warning {
+    color: #ffc107;
+}
+
+/* Submit Button */
+.cfwv-submit-wrapper {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.cfwv-submit-btn {
+    background: #007cba;
+    color: #ffffff;
+    border: none;
+    padding: 16px 32px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 150px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cfwv-submit-btn:hover {
+    background: #005a87;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 124, 186, 0.3);
+}
+
+.cfwv-submit-btn:active {
+    transform: translateY(0);
+}
+
+.cfwv-submit-btn:disabled {
+    background: #c3c4c7;
+    color: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Loading State */
+.cfwv-loading {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.cfwv-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007cba;
+    border-radius: 50%;
+    animation: cfwv-spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+@keyframes cfwv-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Messages */
+.cfwv-messages {
+    margin-top: 20px;
+}
+
+.cfwv-message {
+    padding: 16px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.cfwv-message::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.cfwv-message.success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.cfwv-message.success::before {
+    background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23155724'%3e%3cpath fill-rule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z' clip-rule='evenodd'/%3e%3c/svg%3e") no-repeat center;
+    background-size: 16px;
+}
+
+.cfwv-message.error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.cfwv-message.error::before {
+    background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23721c24'%3e%3cpath fill-rule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' clip-rule='evenodd'/%3e%3c/svg%3e") no-repeat center;
+    background-size: 16px;
+}
+
+.cfwv-message.warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+}
+
+.cfwv-message.warning::before {
+    background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23856404'%3e%3cpath fill-rule='evenodd' d='M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z' clip-rule='evenodd'/%3e%3c/svg%3e") no-repeat center;
+    background-size: 16px;
+}
+
+/* File Upload */
+.cfwv-file-upload {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+.cfwv-file-upload input[type=file] {
+    position: absolute;
+    left: -9999px;
+}
+
+.cfwv-file-upload-btn {
+    border: 2px dashed #c3c4c7;
+    border-radius: 6px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.cfwv-file-upload-btn:hover {
+    border-color: #007cba;
+    background: #f0f6fc;
+}
+
+.cfwv-file-upload-btn.dragover {
+    border-color: #007cba;
+    background: #e6f3ff;
+}
+
+/* Progress Bar */
+.cfwv-progress {
+    width: 100%;
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.cfwv-progress-bar {
+    height: 100%;
+    background: #007cba;
+    transition: width 0.3s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .cfwv-form-container {
+        padding: 15px;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    
+    .cfwv-field {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    .cfwv-submit-btn {
+        width: 100%;
+        padding: 18px;
+    }
+    
+    .cfwv-whatsapp-field {
+        padding-left: 45px;
+        background-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cfwv-form-container {
+        padding: 10px;
+        margin: 0;
+    }
+    
+    .cfwv-field-wrapper {
+        margin-bottom: 15px;
+    }
+    
+    .cfwv-field {
+        padding: 10px 12px;
+        font-size: 16px;
+    }
+    
+    .cfwv-whatsapp-field {
+        padding-left: 40px;
+        background-size: 16px;
+        background-position: left 12px center;
+    }
+    
+    .cfwv-submit-btn {
+        font-size: 14px;
+        padding: 16px;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .cfwv-form-container {
+        background: #1a1a1a;
+        color: #ffffff;
+        border: 1px solid #333;
+    }
+    
+    .cfwv-field-label {
+        color: #ffffff;
+    }
+    
+    .cfwv-field {
+        background: #2a2a2a;
+        border-color: #444;
+        color: #ffffff;
+    }
+    
+    .cfwv-field:focus {
+        border-color: #007cba;
+        box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.2);
+    }
+    
+    .cfwv-field::placeholder {
+        color: #999;
+    }
+    
+    .cfwv-message.success {
+        background: #1a3a1a;
+        border-color: #2a5a2a;
+        color: #90ee90;
+    }
+    
+    .cfwv-message.error {
+        background: #3a1a1a;
+        border-color: #5a2a2a;
+        color: #ff6b6b;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .cfwv-form-container {
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+    
+    .cfwv-submit-btn,
+    .cfwv-loading {
+        display: none;
+    }
+    
+    .cfwv-field {
+        border: 1px solid #000;
+        background: transparent;
+    }
+}
+
+/* Accessibility Improvements */
+.cfwv-field:focus {
+    outline: none;
+    border-color: #007cba;
+    box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.1);
+}
+
+.cfwv-field[aria-invalid="true"] {
+    border-color: #e74c3c;
+}
+
+.cfwv-field[aria-describedby] {
+    /* Ensure proper association with error messages */
+}
+
+/* Screen Reader Only */
+.cfwv-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .cfwv-field {
+        border-width: 2px;
+    }
+    
+    .cfwv-field:focus {
+        border-width: 3px;
+    }
+    
+    .cfwv-submit-btn {
+        border: 2px solid #000;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .cfwv-field,
+    .cfwv-submit-btn,
+    .cfwv-spinner {
+        transition: none;
+        animation: none;
+    }
+}
+
+/* Form Specific Customizations */
+.cfwv-form-container.compact {
+    padding: 15px;
+}
+
+.cfwv-form-container.compact .cfwv-field-wrapper {
+    margin-bottom: 15px;
+}
+
+.cfwv-form-container.minimal {
+    box-shadow: none;
+    border: 1px solid #e1e5e9;
+}
+
+.cfwv-form-container.rounded {
+    border-radius: 16px;
+}
+
+.cfwv-form-container.shadow-lg {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom Field Types */
+.cfwv-field-checkbox,
+.cfwv-field-radio {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.cfwv-field-checkbox input,
+.cfwv-field-radio input {
+    margin: 0;
+    width: auto;
+    flex-shrink: 0;
+}
+
+.cfwv-field-checkbox label,
+.cfwv-field-radio label {
+    margin: 0;
+    font-weight: normal;
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+/* Multi-step Forms */
+.cfwv-form-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    padding: 0;
+    list-style: none;
+}
+
+.cfwv-form-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+}
+
+.cfwv-form-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 15px;
+    right: -50%;
+    width: 100%;
+    height: 2px;
+    background: #e1e5e9;
+    z-index: -1;
+}
+
+.cfwv-form-step.completed::after {
+    background: #27ae60;
+}
+
+.cfwv-form-step-number {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #e1e5e9;
+    color: #6c757d;
+    line-height: 30px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.cfwv-form-step.active .cfwv-form-step-number {
+    background: #007cba;
+    color: #ffffff;
+}
+
+.cfwv-form-step.completed .cfwv-form-step-number {
+    background: #27ae60;
+    color: #ffffff;
+}
+
+.cfwv-form-step-title {
+    font-size: 12px;
+    color: #6c757d;
+    margin: 0;
+}
+
+.cfwv-form-step.active .cfwv-form-step-title {
+    color: #007cba;
+    font-weight: bold;
+}
+
+/* Animation for form appearance */
+@keyframes cfwv-fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.cfwv-form-container.animate {
+    animation: cfwv-fadeIn 0.5s ease-out;
+}
+
+/* Utility Classes */
+.cfwv-text-center {
+    text-align: center;
+}
+
+.cfwv-text-left {
+    text-align: left;
+}
+
+.cfwv-text-right {
+    text-align: right;
+}
+
+.cfwv-mb-0 {
+    margin-bottom: 0;
+}
+
+.cfwv-mb-10 {
+    margin-bottom: 10px;
+}
+
+.cfwv-mb-20 {
+    margin-bottom: 20px;
+}
+
+.cfwv-mt-0 {
+    margin-top: 0;
+}
+
+.cfwv-mt-10 {
+    margin-top: 10px;
+}
+
+.cfwv-mt-20 {
+    margin-top: 20px;
+}
+
+.cfwv-hidden {
+    display: none;
+}
+
+.cfwv-visible {
+    display: block;
+} 

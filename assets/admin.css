@@ -1,0 +1,705 @@
+/* Admin Styles for Contact Form WhatsApp Validation Plugin */
+
+/* Dashboard Styles */
+.cfwv-dashboard-stats {
+    display: flex;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.cfwv-stat-box {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 6px;
+    padding: 20px;
+    text-align: center;
+    flex: 1;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.cfwv-stat-box h3 {
+    font-size: 2.5em;
+    margin: 0 0 10px 0;
+    color: #007cba;
+    font-weight: bold;
+}
+
+.cfwv-stat-box p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.cfwv-dashboard-content {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.cfwv-dashboard-left {
+    flex: 2;
+}
+
+.cfwv-dashboard-right {
+    flex: 1;
+}
+
+.cfwv-panel {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.cfwv-panel h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #23282d;
+    font-size: 1.3em;
+}
+
+.cfwv-status {
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.cfwv-status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.cfwv-status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.cfwv-recent-submissions {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.cfwv-recent-submissions li {
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.cfwv-recent-submissions li:last-child {
+    border-bottom: none;
+}
+
+.cfwv-whatsapp-status {
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.cfwv-whatsapp-status.valid {
+    background: #d4edda;
+    color: #155724;
+}
+
+.cfwv-whatsapp-status.invalid {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.cfwv-quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cfwv-quick-actions .button {
+    text-align: center;
+}
+
+/* Form Builder Styles */
+.cfwv-form-builder-content {
+    display: flex;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.cfwv-form-settings {
+    flex: 1;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 6px;
+    padding: 20px;
+}
+
+.cfwv-form-fields {
+    flex: 1;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 6px;
+    padding: 20px;
+}
+
+.cfwv-field-type-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.cfwv-add-field {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 15px;
+    background: #f0f0f1;
+    border: 1px solid #c3c4c7;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cfwv-add-field:hover {
+    background: #e9e9ea;
+    border-color: #8c8f94;
+}
+
+.cfwv-add-field .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+.cfwv-fields-list {
+    min-height: 200px;
+}
+
+.cfwv-field-item {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: all 0.2s;
+}
+
+.cfwv-field-item:hover {
+    border-color: #999;
+}
+
+.cfwv-field-item.ui-sortable-helper {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.cfwv-field-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    cursor: move;
+}
+
+.cfwv-field-drag {
+    color: #999;
+    margin-right: 10px;
+    cursor: move;
+}
+
+.cfwv-field-header strong {
+    flex: 1;
+    margin-right: 10px;
+}
+
+.cfwv-field-type {
+    color: #666;
+    font-size: 12px;
+    margin-right: 10px;
+}
+
+.cfwv-field-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.cfwv-field-details {
+    padding: 15px;
+    background: #fff;
+}
+
+.cfwv-field-placeholder {
+    height: 60px;
+    background: #e1e1e1;
+    border: 2px dashed #999;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+/* Modal Styles */
+.cfwv-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cfwv-modal-content {
+    background: #fff;
+    border-radius: 6px;
+    padding: 20px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90%;
+    overflow-y: auto;
+    position: relative;
+}
+
+.cfwv-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
+
+.cfwv-modal-close:hover {
+    color: #000;
+}
+
+.cfwv-modal h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+/* Submissions Page Styles */
+.cfwv-submissions-filters {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 6px;
+}
+
+.cfwv-submissions-filters form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cfwv-submissions-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.cfwv-pagination {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.cfwv-pagination .page-numbers {
+    display: inline-block;
+    padding: 8px 12px;
+    margin: 0 2px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 3px;
+    text-decoration: none;
+    color: #0073aa;
+}
+
+.cfwv-pagination .page-numbers:hover {
+    background: #f0f0f1;
+}
+
+.cfwv-pagination .page-numbers.current {
+    background: #0073aa;
+    color: #fff;
+    border-color: #0073aa;
+}
+
+/* Settings Page Styles */
+.cfwv-settings-info {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f9f9f9;
+    border-left: 4px solid #0073aa;
+}
+
+.cfwv-settings-info h2 {
+    margin-top: 0;
+    color: #0073aa;
+}
+
+.cfwv-settings-info ol,
+.cfwv-settings-info ul {
+    padding-left: 20px;
+}
+
+.cfwv-settings-info li {
+    margin-bottom: 8px;
+}
+
+#cfwv-api-test-result {
+    margin-top: 15px;
+}
+
+/* Form Preview Styles */
+.cfwv-form-preview-notice {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    color: #856404;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .cfwv-dashboard-stats {
+        flex-direction: column;
+    }
+    
+    .cfwv-dashboard-content {
+        flex-direction: column;
+    }
+    
+    .cfwv-form-builder-content {
+        flex-direction: column;
+    }
+    
+    .cfwv-field-type-buttons {
+        flex-direction: column;
+    }
+    
+    .cfwv-add-field {
+        justify-content: center;
+    }
+    
+    .cfwv-submissions-filters {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .cfwv-submissions-filters form {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .cfwv-modal-content {
+        width: 95%;
+        margin: 20px;
+    }
+}
+
+/* Additional Utility Classes */
+.cfwv-text-center {
+    text-align: center;
+}
+
+.cfwv-text-left {
+    text-align: left;
+}
+
+.cfwv-text-right {
+    text-align: right;
+}
+
+.cfwv-mb-10 {
+    margin-bottom: 10px;
+}
+
+.cfwv-mb-20 {
+    margin-bottom: 20px;
+}
+
+.cfwv-mt-10 {
+    margin-top: 10px;
+}
+
+.cfwv-mt-20 {
+    margin-top: 20px;
+}
+
+.cfwv-hidden {
+    display: none;
+}
+
+.cfwv-visible {
+    display: block;
+}
+
+.cfwv-flex {
+    display: flex;
+}
+
+.cfwv-flex-wrap {
+    flex-wrap: wrap;
+}
+
+.cfwv-justify-center {
+    justify-content: center;
+}
+
+.cfwv-justify-between {
+    justify-content: space-between;
+}
+
+.cfwv-align-center {
+    align-items: center;
+}
+
+.cfwv-gap-10 {
+    gap: 10px;
+}
+
+.cfwv-gap-20 {
+    gap: 20px;
+}
+
+/* Color Picker Enhancement */
+.wp-color-picker {
+    max-width: 100px;
+}
+
+/* Table Enhancements */
+.cfwv-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.cfwv-table th,
+.cfwv-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.cfwv-table th {
+    background: #f9f9f9;
+    font-weight: bold;
+}
+
+.cfwv-table tr:hover {
+    background: #f5f5f5;
+}
+
+/* Form Validation Styles */
+.cfwv-field-error {
+    color: #d63384;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.cfwv-field-success {
+    color: #198754;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* Loading Spinner */
+.cfwv-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007cba;
+    border-radius: 50%;
+    animation: cfwv-spin 1s linear infinite;
+}
+
+@keyframes cfwv-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Tooltips */
+.cfwv-tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.cfwv-tooltip .cfwv-tooltip-text {
+    visibility: hidden;
+    width: 200px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.cfwv-tooltip:hover .cfwv-tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Notices */
+.cfwv-notice {
+    padding: 12px;
+    margin: 5px 0 15px 0;
+    border-left: 4px solid #ddd;
+    background: #fff;
+    border-radius: 3px;
+}
+
+.cfwv-notice-success {
+    border-left-color: #00a32a;
+    background: #f0fff4;
+}
+
+.cfwv-notice-error {
+    border-left-color: #d63384;
+    background: #fff5f5;
+}
+
+.cfwv-notice-warning {
+    border-left-color: #ffb900;
+    background: #fffbf0;
+}
+
+.cfwv-notice-info {
+    border-left-color: #007cba;
+    background: #f0f6fc;
+}
+
+/* Tabs */
+.cfwv-tabs {
+    border-bottom: 1px solid #c3c4c7;
+    margin-bottom: 20px;
+}
+
+.cfwv-tab {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #f1f1f1;
+    border: 1px solid #c3c4c7;
+    border-bottom: none;
+    margin-right: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    color: #0073aa;
+}
+
+.cfwv-tab:hover {
+    background: #e9e9ea;
+}
+
+.cfwv-tab.active {
+    background: #fff;
+    color: #000;
+}
+
+.cfwv-tab-content {
+    display: none;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 0 0 6px 6px;
+}
+
+.cfwv-tab-content.active {
+    display: block;
+}
+
+/* Search Box */
+.cfwv-search-box {
+    position: relative;
+    display: inline-block;
+}
+
+.cfwv-search-box input {
+    padding: 8px 35px 8px 12px;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    width: 250px;
+}
+
+.cfwv-search-box .dashicons {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+}
+
+/* Progress Bar */
+.cfwv-progress {
+    width: 100%;
+    height: 6px;
+    background: #f1f1f1;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.cfwv-progress-bar {
+    height: 100%;
+    background: #007cba;
+    transition: width 0.3s ease;
+}
+
+/* Badge */
+.cfwv-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: bold;
+    border-radius: 10px;
+    text-transform: uppercase;
+}
+
+.cfwv-badge-primary {
+    background: #007cba;
+    color: #fff;
+}
+
+.cfwv-badge-success {
+    background: #00a32a;
+    color: #fff;
+}
+
+.cfwv-badge-warning {
+    background: #ffb900;
+    color: #000;
+}
+
+.cfwv-badge-danger {
+    background: #d63384;
+    color: #fff;
+}
+
+/* Print Styles */
+@media print {
+    .cfwv-dashboard-stats {
+        flex-direction: column;
+    }
+    
+    .cfwv-dashboard-content {
+        flex-direction: column;
+    }
+    
+    .cfwv-field-actions,
+    .cfwv-submissions-actions {
+        display: none;
+    }
+} 
