@@ -27,7 +27,7 @@ class CFWV_Frontend {
     /**
      * Render form
      */
-    public function render_form($form_id, $style = 'default') {
+    public function render_form($form_id, $style = 'default', $show_title = true) {
         $form = $this->database->get_form($form_id);
         
         if (!$form || $form->status !== 'active') {
@@ -40,7 +40,7 @@ class CFWV_Frontend {
         }
         
         // Generate and return form HTML
-        return $this->form_builder->generate_form_html($form_id);
+        return $this->form_builder->generate_form_html($form_id, array(), $show_title);
     }
     
     /**

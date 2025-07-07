@@ -196,10 +196,13 @@ class ContactFormWhatsAppValidation {
     public function shortcode_form($atts) {
         $atts = shortcode_atts(array(
             'id' => 1,
-            'style' => 'default'
+            'style' => 'default',
+            'show_title' => 'true'
         ), $atts);
         
-        return $this->frontend->render_form($atts['id'], $atts['style']);
+        $show_title = ($atts['show_title'] === 'true' || $atts['show_title'] === '1');
+        
+        return $this->frontend->render_form($atts['id'], $atts['style'], $show_title);
     }
 }
 
