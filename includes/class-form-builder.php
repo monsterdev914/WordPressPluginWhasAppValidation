@@ -211,7 +211,7 @@ class CFWV_FormBuilder {
     /**
      * Generate form HTML
      */
-    public function generate_form_html($form_id, $custom_styles = array()) {
+    public function generate_form_html($form_id, $custom_styles = array(), $show_title = true) {
         $form = $this->database->get_form($form_id);
         if (!$form) {
             return '<p>' . __('Form not found', 'contact-form-whatsapp') . '</p>';
@@ -232,6 +232,17 @@ class CFWV_FormBuilder {
         // Generate HTML
         $html = '<div class="cfwv-form-container" id="cfwv-form-' . $form_id . '">';
         $html .= '<style>' . $css . '</style>';
+        
+        // Add form title
+        if ($show_title && !empty($form->name)) {
+            $html .= '<div class="cfwv-form-header">';
+            $html .= '<h2 class="cfwv-form-title">' . esc_html($form->name) . '</h2>';
+            if (!empty($form->description)) {
+                $html .= '<p class="cfwv-form-description">' . esc_html($form->description) . '</p>';
+            }
+            $html .= '</div>';
+        }
+        
         $html .= '<form class="cfwv-form" data-form-id="' . $form_id . '">';
         
         foreach ($fields as $field) {
@@ -340,6 +351,29 @@ class CFWV_FormBuilder {
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             max-width: 600px;
             margin: 0 auto;
+        }
+        
+        #cfwv-form-{$form_id} .cfwv-form-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid {$styles['border_color']};
+        }
+        
+        #cfwv-form-{$form_id} .cfwv-form-title {
+            margin: 0 0 10px 0;
+            color: {$styles['text_color']};
+            font-size: 28px;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+        
+        #cfwv-form-{$form_id} .cfwv-form-description {
+            margin: 0;
+            color: {$styles['text_color']};
+            font-size: 16px;
+            line-height: 1.5;
+            opacity: 0.8;
         }
         
         #cfwv-form-{$form_id} .cfwv-field-wrapper {

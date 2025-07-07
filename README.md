@@ -137,12 +137,18 @@ ContactFormWithWhatsAppValidation/
 ## Shortcode Parameters
 
 ```
-[cfwv_form id="1" style="default"]
+[cfwv_form id="1" style="default" show_title="true"]
 ```
 
 Parameters:
 - `id`: Form ID (required)
-- `style`: Form style (optional, default: "default")
+- `style`: Form style (optional, default: "default") 
+- `show_title`: Show form title and description (optional, default: "true")
+
+Examples:
+- `[cfwv_form id="1"]` - Display form with title
+- `[cfwv_form id="1" show_title="false"]` - Display form without title
+- `[cfwv_form id="2" style="minimal" show_title="true"]` - Custom style with title
 
 ## Database Tables
 
