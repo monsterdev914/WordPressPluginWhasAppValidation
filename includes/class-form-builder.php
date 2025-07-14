@@ -158,6 +158,23 @@ class CFWV_FormBuilder {
             $errors[] = __('Field name can only contain letters, numbers, and underscores', 'contact-form-whatsapp');
         }
         
+        // Check for duplicate field names (only for new fields or when changing field name)
+        if (!empty($field_data['field_name']) && !empty($field_data['form_id'])) {
+            $existing_fields = $this->database->get_form_fields($field_data['form_id']);
+            
+            foreach ($existing_fields as $existing_field) {
+                // Skip if this is the same field being updated
+                if (isset($field_data['id']) && $field_data['id'] == $existing_field->id) {
+                    continue;
+                }
+                
+                if ($existing_field->field_name === $field_data['field_name']) {
+                    $errors[] = __('Field name already exists. Please use a different name.', 'contact-form-whatsapp');
+                    break;
+                }
+            }
+        }
+        
         // Validate field type
         $valid_types = array_keys($this->get_field_types());
         if (!empty($field_data['field_type']) && !in_array($field_data['field_type'], $valid_types)) {
