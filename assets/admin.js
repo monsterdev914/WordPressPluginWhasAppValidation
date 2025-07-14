@@ -10,6 +10,14 @@ jQuery(document).ready(function($) {
         },
         
         bindEvents: function() {
+            // Unbind existing events to prevent multiple bindings
+            $(document).off('click', '.cfwv-add-field');
+            $(document).off('click', '.cfwv-edit-field');
+            $(document).off('click', '.cfwv-delete-field');
+            $(document).off('click', '.cfwv-delete-form');
+            $(document).off('click', '.cfwv-save-field');
+            $(document).off('click', '.cfwv-cancel-field');
+            
             // Add field buttons
             $(document).on('click', '.cfwv-add-field', this.addField);
             
@@ -18,6 +26,9 @@ jQuery(document).ready(function($) {
             
             // Delete field buttons
             $(document).on('click', '.cfwv-delete-field', this.deleteField);
+            
+            // Delete form buttons
+            $(document).on('click', '.cfwv-delete-form', this.deleteForm);
             
             // Save field form
             $(document).on('click', '.cfwv-save-field', this.saveField);
@@ -65,7 +76,8 @@ jQuery(document).ready(function($) {
             var fieldType = $(this).data('type');
             var formId = $('input[name="form_id"]').val();
             
-            if (!formId) {
+            // Check if form ID is valid (not empty, 0, or null)
+            if (!formId || formId === '0' || formId === 0) {
                 alert('Please save the form first before adding fields.');
                 return;
             }
@@ -75,13 +87,26 @@ jQuery(document).ready(function($) {
         
         editField: function(e) {
             e.preventDefault();
+            e.stopPropagation();
             
-            var fieldItem = $(this).closest('.cfwv-field-item');
+            var button = $(this);
+            var fieldItem = button.closest('.cfwv-field-item');
+            var fieldDetails = fieldItem.find('.cfwv-field-details');
             var fieldId = fieldItem.data('field-id');
             var formId = $('input[name="form_id"]').val();
             
-            // Show field details
-            fieldItem.find('.cfwv-field-details').slideToggle();
+            // Close all other open field details first
+            $('.cfwv-field-details').not(fieldDetails).slideUp();
+            
+            // Toggle current field details
+            fieldDetails.slideToggle(300, function() {
+                // Update button text based on state
+                if (fieldDetails.is(':visible')) {
+                    button.text('Hide Details');
+                } else {
+                    button.text('Edit Field');
+                }
+            });
         },
         
         deleteField: function(e) {
@@ -117,11 +142,65 @@ jQuery(document).ready(function($) {
             });
         },
         
+        deleteForm: function(e) {
+            e.preventDefault();
+            
+            var formId = $(this).data('form-id');
+            var formName = $(this).data('form-name');
+            
+            if (!formId) {
+                alert('Error: No form ID found');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to delete the form "' + formName + '"? This will also delete all associated fields and submissions.')) {
+                return;
+            }
+            
+            var button = $(this);
+            var originalText = button.text();
+            button.text('Deleting...').prop('disabled', true);
+            
+            $.ajax({
+                url: cfwv_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'cfwv_delete_form',
+                    form_id: formId,
+                    nonce: cfwv_ajax.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        button.closest('tr').fadeOut(300, function() {
+                            $(this).remove();
+                        });
+                    } else {
+                        alert('Error: ' + response.data);
+                        button.text(originalText).prop('disabled', false);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Error deleting form. Please try again.');
+                    button.text(originalText).prop('disabled', false);
+                }
+            });
+        },
+        
         saveField: function(e) {
             e.preventDefault();
             
-            var form = $(this).closest('form');
+            var button = $(this);
+            var form = button.closest('form');
             var formData = form.serialize();
+            var originalText = button.text();
+            
+            // Prevent multiple simultaneous saves
+            if (button.data('saving')) {
+                return;
+            }
+            
+            // Show loading state
+            button.prop('disabled', true).text('Saving...').data('saving', true);
             
             $.ajax({
                 url: cfwv_ajax.ajax_url,
@@ -129,13 +208,24 @@ jQuery(document).ready(function($) {
                 data: formData + '&action=cfwv_save_field&nonce=' + cfwv_ajax.nonce,
                 success: function(response) {
                     if (response.success) {
-                        location.reload();
+                        // Close the modal
+                        $('.cfwv-modal').hide();
+                        
+                        // Show success message
+                        FormBuilder.showNotice('Field saved successfully!', 'success');
+                        
+                        // Reload the page after a short delay to show the new field
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
                     } else {
                         alert('Error: ' + response.data);
+                        button.prop('disabled', false).text(originalText).data('saving', false);
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
                     alert('Error saving field. Please try again.');
+                    button.prop('disabled', false).text(originalText).data('saving', false);
                 }
             });
         },
@@ -143,8 +233,26 @@ jQuery(document).ready(function($) {
         cancelField: function(e) {
             e.preventDefault();
             
-            var fieldItem = $(this).closest('.cfwv-field-item');
-            fieldItem.find('.cfwv-field-details').slideUp();
+            var button = $(this);
+            var modal = button.closest('.cfwv-modal');
+            var fieldItem = button.closest('.cfwv-field-item');
+            
+            // If we're in a modal context, close the modal
+            if (modal.length > 0) {
+                modal.hide();
+                return;
+            }
+            
+            // If we're in an inline edit context, hide field details
+            if (fieldItem.length > 0) {
+                var editButton = fieldItem.find('.cfwv-edit-field');
+                
+                // Hide field details
+                fieldItem.find('.cfwv-field-details').slideUp(300, function() {
+                    // Reset edit button text
+                    editButton.text('Edit Field');
+                });
+            }
         },
         
         fieldTypeChange: function() {
@@ -160,9 +268,21 @@ jQuery(document).ready(function($) {
         
         saveForm: function(e) {
             e.preventDefault();
+            e.stopPropagation();
             
             var form = $(this);
             var formData = form.serialize();
+            var submitButton = form.find('input[type="submit"]');
+            var originalText = submitButton.val();
+            
+            // Prevent multiple simultaneous saves
+            if (form.data('saving')) {
+                return false;
+            }
+            
+            // Show loading state
+            submitButton.prop('disabled', true).val('Saving...').addClass('saving');
+            form.data('saving', true);
             
             $.ajax({
                 url: cfwv_ajax.ajax_url,
@@ -170,13 +290,19 @@ jQuery(document).ready(function($) {
                 data: formData + '&action=cfwv_save_form&nonce=' + cfwv_ajax.nonce,
                 success: function(response) {
                     if (response.success) {
-                        if (response.data.form_id && !$('input[name="form_id"]').val()) {
+                        var currentFormId = $('input[name="form_id"]').val();
+                        
+                        // Check if this is a new form (form_id is 0 or empty) and we got a new form_id
+                        if (response.data.form_id && (!currentFormId || currentFormId === '0')) {
                             $('input[name="form_id"]').val(response.data.form_id);
                             
-                            // Update URL to include form_id
+                            // Update URL to include form_id without refreshing
                             var url = new URL(window.location);
                             url.searchParams.set('form_id', response.data.form_id);
                             window.history.replaceState({}, '', url);
+                            
+                            // Update page title to show edit mode
+                            $('h1').text('Edit Form');
                         }
                         
                         FormBuilder.showNotice('Form saved successfully!', 'success');
@@ -186,8 +312,15 @@ jQuery(document).ready(function($) {
                 },
                 error: function() {
                     FormBuilder.showNotice('Error saving form. Please try again.', 'error');
+                },
+                complete: function() {
+                    // Reset button state
+                    submitButton.prop('disabled', false).val(originalText).removeClass('saving');
+                    form.data('saving', false);
                 }
             });
+            
+            return false;
         },
         
         copyShortcode: function(e) {
@@ -231,11 +364,17 @@ jQuery(document).ready(function($) {
                         modal.find('#cfwv-field-form-content').html(response.data);
                         FormBuilder.fieldTypeChange.call(modal.find('select[name="field_type"]'));
                     } else {
-                        modal.find('#cfwv-field-form-content').html('<p>Error loading field form</p>');
+                        console.error('AJAX Error:', response.data);
+                        modal.find('#cfwv-field-form-content').html('<p>Error loading field form: ' + response.data + '</p>');
                     }
                 },
-                error: function() {
-                    modal.find('#cfwv-field-form-content').html('<p>Error loading field form</p>');
+                error: function(xhr, status, error) {
+                    console.error('AJAX Request failed:', {
+                        status: status,
+                        error: error,
+                        response: xhr.responseText
+                    });
+                    modal.find('#cfwv-field-form-content').html('<p>Error loading field form. Please check the console for details.</p>');
                 }
             });
         },
@@ -405,15 +544,15 @@ jQuery(document).ready(function($) {
     // Initialize based on current page
     if ($('.cfwv-form-builder').length) {
         FormBuilder.init();
+    } else {
+        // Initialize only the delete form functionality for dashboard and other pages
+        $(document).on('click', '.cfwv-delete-form', FormBuilder.deleteForm);
+        $(document).on('click', '.cfwv-copy-shortcode', FormBuilder.copyShortcode);
     }
     
     if ($('.cfwv-submissions').length) {
         Submissions.init();
     }
-    
-    // General admin functionality
-    FormBuilder.init();
-    Submissions.init();
     
     // Form preview functionality
     $(document).on('click', '.cfwv-preview-form', function(e) {
@@ -425,34 +564,35 @@ jQuery(document).ready(function($) {
         window.open(previewUrl, '_blank');
     });
     
-    // Auto-save functionality for form builder
-    var autoSaveTimeout;
-    $(document).on('input', '#cfwv-form-builder input, #cfwv-form-builder select, #cfwv-form-builder textarea', function() {
-        clearTimeout(autoSaveTimeout);
-        autoSaveTimeout = setTimeout(function() {
-            if ($('input[name="form_id"]').val()) {
-                $('#cfwv-form-builder').trigger('submit');
-            }
-        }, 2000);
-    });
+
     
     // Form validation
     $(document).on('submit', '#cfwv-form-builder', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var form = $(this);
         var formName = $('input[name="form_name"]').val();
+        
+        // Validate form name
         if (!formName.trim()) {
-            e.preventDefault();
             alert('Please enter a form name.');
             $('input[name="form_name"]').focus();
             return false;
         }
         
+        // Check if on settings page and validate API token
         var apiToken = $('input[name="wassenger_api_token"]').val();
         if (!apiToken && $('.cfwv-settings-page').length) {
-            e.preventDefault();
             alert('Please enter your Wassenger API token.');
             $('input[name="wassenger_api_token"]').focus();
             return false;
         }
+        
+        // If validation passes, call the saveForm function
+        FormBuilder.saveForm.call(this, e);
+        
+        return false;
     });
     
     // Real-time form styling preview

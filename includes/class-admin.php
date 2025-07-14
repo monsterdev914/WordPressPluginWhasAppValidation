@@ -105,6 +105,9 @@ class CFWV_Admin {
                                             <a href="<?php echo admin_url('admin.php?page=cfwv-submissions&form_id=' . $form->id); ?>" class="button button-small">
                                                 <?php _e('View Submissions', 'contact-form-whatsapp'); ?>
                                             </a>
+                                            <button type="button" class="button button-small cfwv-delete-form" data-form-id="<?php echo $form->id; ?>" data-form-name="<?php echo esc_attr($form->name); ?>">
+                                                <?php _e('Delete', 'contact-form-whatsapp'); ?>
+                                            </button>
                                         </td>
                                     </tr>
                                     <?php endforeach; ?>
@@ -478,68 +481,85 @@ class CFWV_Admin {
     /**
      * Render field form
      */
-    private function render_field_form($field = null) {
+    private function render_field_form($field = null, $form_id = null) {
         $field_types = $this->form_builder->get_field_types();
-        ?>
-        <table class="form-table">
-            <tr>
-                <th><label for="field_name"><?php _e('Field Name', 'contact-form-whatsapp'); ?></label></th>
-                <td>
-                    <input type="text" name="field_name" value="<?php echo $field ? esc_attr($field->field_name) : ''; ?>" class="regular-text" required>
-                    <p class="description"><?php _e('Used internally (letters, numbers, underscore only)', 'contact-form-whatsapp'); ?></p>
-                </td>
-            </tr>
-            <tr>
-                <th><label for="field_label"><?php _e('Field Label', 'contact-form-whatsapp'); ?></label></th>
-                <td>
-                    <input type="text" name="field_label" value="<?php echo $field ? esc_attr($field->field_label) : ''; ?>" class="regular-text" required>
-                </td>
-            </tr>
-            <tr>
-                <th><label for="field_type"><?php _e('Field Type', 'contact-form-whatsapp'); ?></label></th>
-                <td>
-                    <select name="field_type" required>
-                        <?php foreach ($field_types as $type => $info): ?>
-                        <option value="<?php echo $type; ?>" <?php echo ($field && $field->field_type === $type) ? 'selected' : ''; ?>>
-                            <?php echo $info['label']; ?>
-                        </option>
-                        <?php endforeach; ?>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <th><label for="field_placeholder"><?php _e('Placeholder', 'contact-form-whatsapp'); ?></label></th>
-                <td>
-                    <input type="text" name="field_placeholder" value="<?php echo $field ? esc_attr($field->field_placeholder) : ''; ?>" class="regular-text">
-                </td>
-            </tr>
-            <tr class="cfwv-field-options-row" style="display: none;">
-                <th><label for="field_options"><?php _e('Options', 'contact-form-whatsapp'); ?></label></th>
-                <td>
-                    <textarea name="field_options" rows="4" class="large-text"><?php echo $field ? esc_textarea($field->field_options) : ''; ?></textarea>
-                    <p class="description"><?php _e('For dropdown fields. One option per line. Format: value|label', 'contact-form-whatsapp'); ?></p>
-                </td>
-            </tr>
-            <tr>
-                <th><label for="is_required"><?php _e('Required', 'contact-form-whatsapp'); ?></label></th>
-                <td>
-                    <input type="checkbox" name="is_required" value="1" <?php echo ($field && $field->is_required) ? 'checked' : ''; ?>>
-                    <?php _e('This field is required', 'contact-form-whatsapp'); ?>
-                </td>
-            </tr>
-            <tr>
-                <th><label for="field_class"><?php _e('CSS Class', 'contact-form-whatsapp'); ?></label></th>
-                <td>
-                    <input type="text" name="field_class" value="<?php echo $field ? esc_attr($field->field_class) : ''; ?>" class="regular-text">
-                    <p class="description"><?php _e('Additional CSS classes for styling', 'contact-form-whatsapp'); ?></p>
-                </td>
-            </tr>
-        </table>
         
-        <p class="submit">
-            <input type="submit" name="save_field" class="button button-primary" value="<?php _e('Save Field', 'contact-form-whatsapp'); ?>">
-            <button type="button" class="button cfwv-cancel-field"><?php _e('Cancel', 'contact-form-whatsapp'); ?></button>
-        </p>
+        // If form_id is not provided, try to get it from the field or POST data
+        if (!$form_id) {
+            if ($field && isset($field->form_id)) {
+                $form_id = $field->form_id;
+            } elseif (isset($_POST['form_id'])) {
+                $form_id = intval($_POST['form_id']);
+            } else {
+                $form_id = 0;
+            }
+        }
+        ?>
+        <form id="cfwv-field-form">
+            <input type="hidden" name="field_id" value="<?php echo $field ? intval($field->id) : '0'; ?>">
+            <input type="hidden" name="form_id" value="<?php echo intval($form_id); ?>">
+            <input type="hidden" name="field_order" value="<?php echo $field ? intval($field->field_order) : '999'; ?>">
+            
+            <table class="form-table">
+                <tr>
+                    <th><label for="field_name"><?php _e('Field Name', 'contact-form-whatsapp'); ?></label></th>
+                    <td>
+                        <input type="text" name="field_name" value="<?php echo $field ? esc_attr($field->field_name) : ''; ?>" class="regular-text" required>
+                        <p class="description"><?php _e('Used internally (letters, numbers, underscore only)', 'contact-form-whatsapp'); ?></p>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="field_label"><?php _e('Field Label', 'contact-form-whatsapp'); ?></label></th>
+                    <td>
+                        <input type="text" name="field_label" value="<?php echo $field ? esc_attr($field->field_label) : ''; ?>" class="regular-text" required>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="field_type"><?php _e('Field Type', 'contact-form-whatsapp'); ?></label></th>
+                    <td>
+                        <select name="field_type" required>
+                            <?php foreach ($field_types as $type => $info): ?>
+                            <option value="<?php echo $type; ?>" <?php echo ($field && $field->field_type === $type) ? 'selected' : ''; ?>>
+                                <?php echo $info['label']; ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="field_placeholder"><?php _e('Placeholder', 'contact-form-whatsapp'); ?></label></th>
+                    <td>
+                        <input type="text" name="field_placeholder" value="<?php echo $field ? esc_attr($field->field_placeholder) : ''; ?>" class="regular-text">
+                    </td>
+                </tr>
+                <tr class="cfwv-field-options-row" style="display: none;">
+                    <th><label for="field_options"><?php _e('Options', 'contact-form-whatsapp'); ?></label></th>
+                    <td>
+                        <textarea name="field_options" rows="4" class="large-text"><?php echo $field ? esc_textarea($field->field_options) : ''; ?></textarea>
+                        <p class="description"><?php _e('For dropdown fields. One option per line. Format: value|label', 'contact-form-whatsapp'); ?></p>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="is_required"><?php _e('Required', 'contact-form-whatsapp'); ?></label></th>
+                    <td>
+                        <input type="checkbox" name="is_required" value="1" <?php echo ($field && $field->is_required) ? 'checked' : ''; ?>>
+                        <?php _e('This field is required', 'contact-form-whatsapp'); ?>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="field_class"><?php _e('CSS Class', 'contact-form-whatsapp'); ?></label></th>
+                    <td>
+                        <input type="text" name="field_class" value="<?php echo $field ? esc_attr($field->field_class) : ''; ?>" class="regular-text">
+                        <p class="description"><?php _e('Additional CSS classes for styling', 'contact-form-whatsapp'); ?></p>
+                    </td>
+                </tr>
+            </table>
+            
+            <p class="submit">
+                <button type="button" name="save_field" class="button button-primary cfwv-save-field" value="<?php _e('Save Field', 'contact-form-whatsapp'); ?>"><?php _e('Save Field', 'contact-form-whatsapp'); ?></button>
+                <button type="button" class="button cfwv-cancel-field"><?php _e('Cancel', 'contact-form-whatsapp'); ?></button>
+            </p>
+        </form>
         <?php
     }
     
@@ -575,6 +595,11 @@ class CFWV_Admin {
         check_ajax_referer('cfwv_nonce', 'nonce');
         
         $form_id = intval($_POST['form_id']);
+        
+        if (!$form_id) {
+            wp_send_json_error(__('No form ID provided', 'contact-form-whatsapp'));
+        }
+        
         $result = $this->database->delete_form($form_id);
         
         if ($result) {
@@ -587,32 +612,36 @@ class CFWV_Admin {
     public function ajax_save_field() {
         check_ajax_referer('cfwv_nonce', 'nonce');
         
-        $field_data = array(
-            'id' => intval($_POST['field_id']),
-            'form_id' => intval($_POST['form_id']),
-            'field_name' => sanitize_text_field($_POST['field_name']),
-            'field_label' => sanitize_text_field($_POST['field_label']),
-            'field_type' => sanitize_text_field($_POST['field_type']),
-            'field_options' => sanitize_textarea_field($_POST['field_options']),
-            'is_required' => isset($_POST['is_required']) ? 1 : 0,
-            'field_order' => intval($_POST['field_order']),
-            'field_placeholder' => sanitize_text_field($_POST['field_placeholder']),
-            'field_class' => sanitize_text_field($_POST['field_class'])
-        );
-        
-        // Validate field data
-        $errors = $this->form_builder->validate_field_data($field_data);
-        
-        if (!empty($errors)) {
-            wp_send_json_error(implode(', ', $errors));
-        }
-        
-        $result = $this->database->save_form_field($field_data);
-        
-        if ($result) {
-            wp_send_json_success(array('field_id' => $result));
-        } else {
-            wp_send_json_error(__('Failed to save field', 'contact-form-whatsapp'));
+        try {
+            $field_data = array(
+                'id' => intval($_POST['field_id']),
+                'form_id' => intval($_POST['form_id']),
+                'field_name' => sanitize_text_field($_POST['field_name']),
+                'field_label' => sanitize_text_field($_POST['field_label']),
+                'field_type' => sanitize_text_field($_POST['field_type']),
+                'field_options' => sanitize_textarea_field($_POST['field_options']),
+                'is_required' => isset($_POST['is_required']) ? 1 : 0,
+                'field_order' => isset($_POST['field_order']) ? intval($_POST['field_order']) : 999,
+                'field_placeholder' => sanitize_text_field($_POST['field_placeholder']),
+                'field_class' => sanitize_text_field($_POST['field_class'])
+            );
+            
+            // Validate field data
+            $errors = $this->form_builder->validate_field_data($field_data);
+            
+            if (!empty($errors)) {
+                wp_send_json_error(implode(', ', $errors));
+            }
+            
+            $result = $this->database->save_form_field($field_data);
+            
+            if ($result) {
+                wp_send_json_success(array('field_id' => $result));
+            } else {
+                wp_send_json_error(__('Failed to save field', 'contact-form-whatsapp'));
+            }
+        } catch (Exception $e) {
+            wp_send_json_error('Error: ' . $e->getMessage());
         }
     }
     
@@ -632,34 +661,32 @@ class CFWV_Admin {
     public function ajax_get_field_form() {
         check_ajax_referer('cfwv_nonce', 'nonce');
         
-        $field_type = sanitize_text_field($_POST['field_type']);
-        $field_id = isset($_POST['field_id']) ? intval($_POST['field_id']) : 0;
-        $form_id = intval($_POST['form_id']);
-        
-        // Get field data if editing
-        $field = null;
-        if ($field_id > 0) {
-            $fields = $this->database->get_form_fields($form_id);
-            foreach ($fields as $f) {
-                if ($f->id == $field_id) {
-                    $field = $f;
-                    break;
+        try {
+            $field_type = sanitize_text_field($_POST['field_type']);
+            $field_id = isset($_POST['field_id']) ? intval($_POST['field_id']) : 0;
+            $form_id = intval($_POST['form_id']);
+            
+            // Get field data if editing
+            $field = null;
+            if ($field_id > 0) {
+                $fields = $this->database->get_form_fields($form_id);
+                foreach ($fields as $f) {
+                    if ($f->id == $field_id) {
+                        $field = $f;
+                        break;
+                    }
                 }
             }
+            
+            // Generate field form HTML
+            ob_start();
+            $this->render_field_form($field, $form_id);
+            $html = ob_get_clean();
+            
+            wp_send_json_success($html);
+        } catch (Exception $e) {
+            wp_send_json_error('Error: ' . $e->getMessage());
         }
-        
-        // Generate field form HTML
-        ob_start();
-        ?>
-        <input type="hidden" name="field_id" value="<?php echo $field_id; ?>">
-        <input type="hidden" name="form_id" value="<?php echo $form_id; ?>">
-        <input type="hidden" name="field_order" value="<?php echo $field ? $field->field_order : 999; ?>">
-        
-        <?php $this->render_field_form($field); ?>
-        <?php
-        $html = ob_get_clean();
-        
-        wp_send_json_success($html);
     }
     
     public function ajax_update_field_order() {

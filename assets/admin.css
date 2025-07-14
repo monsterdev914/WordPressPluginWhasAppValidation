@@ -225,6 +225,52 @@
     gap: 5px;
 }
 
+/* Form saving state */
+input[type="submit"].saving {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    cursor: not-allowed !important;
+    opacity: 0.8;
+}
+
+#cfwv-form-builder[data-saving="true"] {
+    position: relative;
+}
+
+#cfwv-form-builder[data-saving="true"]::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.7);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* Delete button styles */
+.cfwv-delete-form,
+.cfwv-delete-field {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: #fff !important;
+    margin-left: 5px;
+}
+
+.cfwv-delete-form:hover,
+.cfwv-delete-field:hover {
+    background-color: #c82333 !important;
+    border-color: #c82333 !important;
+}
+
+.cfwv-delete-form:disabled,
+.cfwv-delete-field:disabled {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    cursor: not-allowed !important;
+}
+
 .cfwv-field-details {
     padding: 15px;
     background: #fff;
