@@ -457,6 +457,33 @@ class CFWV_Admin {
             
             <div id="cfwv-api-test-result"></div>
             
+            <hr>
+            
+            <div class="cfwv-database-tools">
+                <h2><?php _e('Database Tools', 'contact-form-whatsapp'); ?></h2>
+                <p><?php _e('Use this button to reset all plugin database tables to empty state and create a fresh default form.', 'contact-form-whatsapp'); ?></p>
+                <p class="description">
+                    <strong style="color: #d63638;"><?php _e('⚠️ WARNING:', 'contact-form-whatsapp'); ?></strong> 
+                    <?php _e('This will DROP all existing tables and recreate them EMPTY. All forms, fields, and submissions will be permanently deleted!', 'contact-form-whatsapp'); ?>
+                </p>
+                
+                <button type="button" id="cfwv-initialize-tables" class="button button-secondary" style="background: #d63638; border-color: #d63638; color: white;">
+                    <?php _e('🔄 Reset to Empty Tables', 'contact-form-whatsapp'); ?>
+                </button>
+                
+                <div id="cfwv-initialize-result" style="margin-top: 10px;"></div>
+                
+                <div style="margin-top: 15px; padding: 10px; background: #f9f9f9; border-left: 4px solid #00a0d2;">
+                    <h4 style="margin-top: 0;"><?php _e('What this does:', 'contact-form-whatsapp'); ?></h4>
+                    <ul style="margin-left: 20px;">
+                        <li><?php _e('✅ Drops all existing plugin tables', 'contact-form-whatsapp'); ?></li>
+                        <li><?php _e('✅ Creates fresh empty tables', 'contact-form-whatsapp'); ?></li>
+                        <li><?php _e('✅ Creates one default contact form with required fields', 'contact-form-whatsapp'); ?></li>
+                        <li><?php _e('✅ Gives you a clean slate to start fresh', 'contact-form-whatsapp'); ?></li>
+                    </ul>
+                </div>
+            </div>
+            
             <div class="cfwv-settings-info">
                 <h2><?php _e('How to Use', 'contact-form-whatsapp'); ?></h2>
                 <ol>

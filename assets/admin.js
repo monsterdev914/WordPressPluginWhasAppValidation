@@ -50,6 +50,9 @@ jQuery(document).ready(function($) {
             
             // Test API
             $(document).on('click', '#cfwv-test-api', this.testAPI);
+            
+            // Initialize Tables
+            $(document).on('click', '#cfwv-initialize-tables', this.initializeTables);
         },
         
         initSortable: function() {
@@ -432,6 +435,41 @@ jQuery(document).ready(function($) {
             });
         },
         
+        initializeTables: function(e) {
+            e.preventDefault();
+            
+            // Confirm action
+            if (!confirm('⚠️ WARNING: This will DROP all existing plugin tables and recreate them EMPTY!\n\nAll your forms, fields, and submissions will be permanently deleted.\n\nAre you absolutely sure you want to continue?')) {
+                return;
+            }
+            
+            var button = $(this);
+            var resultDiv = $('#cfwv-initialize-result');
+            var originalText = button.text();
+            
+            button.prop('disabled', true).text('Initializing...');
+            resultDiv.html('<p>Initializing database tables...</p>');
+            
+            $.ajax({
+                url: cfwv_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'cfwv_initialize_tables',
+                    nonce: cfwv_ajax.nonce
+                },
+                success: function(response) {
+                    var className = response.success ? 'notice-success' : 'notice-error';
+                    resultDiv.html('<div class="notice ' + className + '"><p>' + response.data + '</p></div>');
+                },
+                error: function() {
+                    resultDiv.html('<div class="notice notice-error"><p>Error initializing tables. Please try again.</p></div>');
+                },
+                complete: function() {
+                    button.prop('disabled', false).text(originalText);
+                }
+            });
+        },
+        
         showNotice: function(message, type) {
             var noticeClass = type === 'success' ? 'notice-success' : 'notice-error';
             var notice = $('<div class="notice ' + noticeClass + ' is-dismissible"><p>' + message + '</p></div>');
@@ -548,6 +586,10 @@ jQuery(document).ready(function($) {
         // Initialize only the delete form functionality for dashboard and other pages
         $(document).on('click', '.cfwv-delete-form', FormBuilder.deleteForm);
         $(document).on('click', '.cfwv-copy-shortcode', FormBuilder.copyShortcode);
+        
+        // Bind admin functions for settings and other pages
+        $(document).on('click', '#cfwv-test-api', FormBuilder.testAPI);
+        $(document).on('click', '#cfwv-initialize-tables', FormBuilder.initializeTables);
     }
     
     if ($('.cfwv-submissions').length) {
@@ -657,5 +699,41 @@ jQuery(document).ready(function($) {
         setTimeout(function() {
             button.prop('disabled', false).text(originalText);
         }, 3000);
+    });
+    
+    // Initialize Tables button - standalone implementation
+    $(document).on('click', '#cfwv-initialize-tables', function(e) {
+        e.preventDefault();
+        
+        // Confirm action
+        if (!confirm('⚠️ WARNING: This will DROP all existing plugin tables and recreate them EMPTY!\n\nAll your forms, fields, and submissions will be permanently deleted.\n\nAre you absolutely sure you want to continue?')) {
+            return;
+        }
+        
+        var button = $(this);
+        var resultDiv = $('#cfwv-initialize-result');
+        var originalText = button.text();
+        
+        button.prop('disabled', true).text('Initializing...');
+        resultDiv.html('<p>Initializing database tables...</p>');
+        
+        $.ajax({
+            url: cfwv_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'cfwv_initialize_tables',
+                nonce: cfwv_ajax.nonce
+            },
+            success: function(response) {
+                var className = response.success ? 'notice-success' : 'notice-error';
+                resultDiv.html('<div class="notice ' + className + '"><p>' + response.data + '</p></div>');
+            },
+            error: function() {
+                resultDiv.html('<div class="notice notice-error"><p>Error initializing tables. Please try again.</p></div>');
+            },
+            complete: function() {
+                button.prop('disabled', false).text(originalText);
+            }
+        });
     });
 }); 

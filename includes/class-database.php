@@ -96,6 +96,37 @@ class CFWV_Database {
     }
     
     /**
+     * Drop and recreate all tables (EMPTY)
+     */
+    public function reset_tables() {
+        // Drop existing tables
+        $this->wpdb->query("DROP TABLE IF EXISTS $this->submission_data_table");
+        $this->wpdb->query("DROP TABLE IF EXISTS $this->submissions_table");
+        $this->wpdb->query("DROP TABLE IF EXISTS $this->form_fields_table");
+        $this->wpdb->query("DROP TABLE IF EXISTS $this->forms_table");
+        
+        // Recreate tables fresh
+        $this->create_tables();
+    }
+    
+    /**
+     * Clear all data from tables but keep structure
+     */
+    public function clear_all_data() {
+        // Clear data in correct order (child tables first)
+        $this->wpdb->query("DELETE FROM $this->submission_data_table");
+        $this->wpdb->query("DELETE FROM $this->submissions_table");
+        $this->wpdb->query("DELETE FROM $this->form_fields_table");
+        $this->wpdb->query("DELETE FROM $this->forms_table");
+        
+        // Reset auto-increment
+        $this->wpdb->query("ALTER TABLE $this->submission_data_table AUTO_INCREMENT = 1");
+        $this->wpdb->query("ALTER TABLE $this->submissions_table AUTO_INCREMENT = 1");
+        $this->wpdb->query("ALTER TABLE $this->form_fields_table AUTO_INCREMENT = 1");
+        $this->wpdb->query("ALTER TABLE $this->forms_table AUTO_INCREMENT = 1");
+    }
+    
+    /**
      * Get all forms
      */
     public function get_forms() {
