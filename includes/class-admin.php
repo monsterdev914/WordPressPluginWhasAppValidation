@@ -525,8 +525,68 @@ class CFWV_Admin {
                     <li><?php _e('WhatsApp Number (whatsapp field)', 'contact-form-whatsapp'); ?></li>
                 </ul>
             </div>
+            
+            <!-- Background Process Logs Section -->
+            <div class="cfwv-logs-section" style="margin-top: 20px;">
+                <h2><?php _e('📋 Background Process Logs', 'contact-form-whatsapp'); ?></h2>
+                <p><?php _e('Monitor WhatsApp API health checks and background processes', 'contact-form-whatsapp'); ?></p>
+                
+                <?php $this->render_background_logs(); ?>
+            </div>
         </div>
         <?php
+    }
+    
+    /**
+     * Render background process logs
+     */
+    private function render_background_logs() {
+        // Get logs from database
+        $logs = get_option('cfwv_background_logs', array());
+        
+        if (empty($logs)) {
+            echo '<p><em>' . __('No background process logs found. Logs will appear here after the first API health check.', 'contact-form-whatsapp') . '</em></p>';
+            return;
+        }
+        
+        // Get cron status
+        $next_run = wp_next_scheduled('cfwv_check_api_health');
+        $next_run_time = $next_run ? date('Y-m-d H:i:s', $next_run) : __('Not scheduled', 'contact-form-whatsapp');
+        
+        echo '<div class="cfwv-log-status" style="background: #f1f1f1; padding: 10px; margin-bottom: 10px;">';
+        echo '<p><strong>' . __('Next Health Check:', 'contact-form-whatsapp') . '</strong> ' . esc_html($next_run_time) . '</p>';
+        echo '<button type="button" class="button" id="cfwv-refresh-logs">🔄 ' . __('Refresh Logs', 'contact-form-whatsapp') . '</button>';
+        echo '<button type="button" class="button" id="cfwv-clear-logs" style="margin-left: 10px;">🗑️ ' . __('Clear Logs', 'contact-form-whatsapp') . '</button>';
+        echo '</div>';
+        
+        echo '<div class="cfwv-logs-container" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #f9f9f9; font-family: monospace; font-size: 12px;">';
+        
+        // Display last 20 logs
+        $recent_logs = array_slice($logs, 0, 20);
+        foreach ($recent_logs as $log) {
+            $timestamp = esc_html($log['timestamp']);
+            $message = esc_html($log['message']);
+            
+            // Color code different types of messages
+            $style = '';
+            if (strpos($message, 'failed') !== false || strpos($message, 'Error') !== false) {
+                $style = 'color: #d63638;'; // Red for errors
+            } elseif (strpos($message, 'scheduled') !== false || strpos($message, 'healthy') !== false) {
+                $style = 'color: #00a32a;'; // Green for success
+            } elseif (strpos($message, 'Warning') !== false || strpos($message, 'High') !== false) {
+                $style = 'color: #dba617;'; // Orange for warnings
+            }
+            
+            echo '<div style="margin-bottom: 5px; ' . $style . '">';
+            echo '<strong>' . $timestamp . '</strong> - ' . $message;
+            echo '</div>';
+        }
+        
+        echo '</div>';
+        
+        if (count($logs) > 20) {
+            echo '<p><em>' . sprintf(__('Showing last 20 entries. Total: %d entries.', 'contact-form-whatsapp'), count($logs)) . '</em></p>';
+        }
     }
     
     /**
@@ -893,5 +953,14 @@ class CFWV_Admin {
         
         $result = $this->whatsapp_validator->test_api_connection();
         wp_send_json($result);
+    }
+    
+    public function ajax_clear_logs() {
+        check_ajax_referer('cfwv_nonce', 'nonce');
+        
+        // Clear the background logs
+        delete_option('cfwv_background_logs');
+        
+        wp_send_json_success(array('message' => __('Logs cleared successfully', 'contact-form-whatsapp')));
     }
 } 

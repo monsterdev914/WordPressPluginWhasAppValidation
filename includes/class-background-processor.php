@@ -25,7 +25,8 @@ class CFWV_BackgroundProcessor {
         add_action('cfwv_check_api_health', array($this, 'check_api_health'));
         
         // Schedule cron jobs on plugin activation
-        register_activation_hook(CFWV_PLUGIN_PATH . 'contact-form-whatsapp-validation.php', array($this, 'schedule_cron_jobs'));
+        $this->schedule_cron_jobs();
+        // register_activation_hook(CFWV_PLUGIN_PATH . 'contact-form-whatsapp-validation.php', array($this, 'schedule_cron_jobs'));
         register_deactivation_hook(CFWV_PLUGIN_PATH . 'contact-form-whatsapp-validation.php', array($this, 'unschedule_cron_jobs'));
     }
     
@@ -46,7 +47,27 @@ class CFWV_BackgroundProcessor {
      * Add custom cron intervals
      */
     public function add_custom_intervals($schedules) {
-        // We can add custom intervals here if needed in future
+        // Add custom intervals for more frequent checks
+        $schedules['every5minutes'] = array(
+            'interval' => 5 * 60,
+            'display'  => __('Every 5 Minutes', 'contact-form-whatsapp')
+        );
+        
+        $schedules['every10minutes'] = array(
+            'interval' => 10 * 60,
+            'display'  => __('Every 10 Minutes', 'contact-form-whatsapp')
+        );
+        
+        $schedules['every15minutes'] = array(
+            'interval' => 15 * 60,
+            'display'  => __('Every 15 Minutes', 'contact-form-whatsapp')
+        );
+        
+        $schedules['every30minutes'] = array(
+            'interval' => 30 * 60,
+            'display'  => __('Every 30 Minutes', 'contact-form-whatsapp')
+        );
+        
         return $schedules;
     }
     
@@ -54,12 +75,16 @@ class CFWV_BackgroundProcessor {
      * Schedule cron job for API health monitoring
      */
     public function schedule_cron_jobs() {
-        // Check API health hourly
-        if (!wp_next_scheduled('cfwv_check_api_health')) {
-            wp_schedule_event(time(), 'hourly', 'cfwv_check_api_health');
-        }
+        // Check API health - you can change the interval here:
+        // Options: 'every5minutes', 'every10minutes', 'every15minutes', 'every30minutes', 'hourly', 'twicedaily', 'daily'
+        $interval = 'every5minutes'; // ← Change this to your preferred interval
         
-        $this->log_process('API health monitoring scheduled successfully');
+        if (!wp_next_scheduled('cfwv_check_api_health')) {
+            wp_schedule_event(time(), $interval, 'cfwv_check_api_health');
+            $this->log_process('API health monitoring scheduled successfully (' . $interval . ')');
+        } else {
+            $this->log_process('API health monitoring already scheduled');
+        }
     }
     
     /**
@@ -230,8 +255,23 @@ class CFWV_BackgroundProcessor {
             $next_run_time = date('Y-m-d H:i:s', $next_run);
             $time_until = human_time_diff(time(), $next_run);
             
+            // Get the current schedule interval for display
+            $schedules = wp_get_schedules();
+            $current_schedule = 'Unknown';
+            $events = _get_cron_array();
+            foreach ($events as $timestamp => $cron) {
+                if (isset($cron['cfwv_check_api_health'])) {
+                    foreach ($cron['cfwv_check_api_health'] as $event) {
+                        if (isset($event['schedule']) && isset($schedules[$event['schedule']])) {
+                            $current_schedule = $schedules[$event['schedule']]['display'];
+                            break 2;
+                        }
+                    }
+                }
+            }
+            
             $status_class = 'notice notice-success';
-            $status_message = '<strong>✅ WhatsApp Session Monitor:</strong> Active (Hourly checks) - Next check in ' . $time_until . ' (' . $next_run_time . ')';
+            $status_message = '<strong>✅ WhatsApp Session Monitor:</strong> Active (' . $current_schedule . ') - Next check in ' . $time_until . ' (' . $next_run_time . ')';
             
             // Add last execution status if available
             if ($last_log) {
