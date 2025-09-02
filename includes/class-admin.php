@@ -419,12 +419,16 @@ class CFWV_Admin {
             check_admin_referer('cfwv_settings', 'cfwv_nonce');
             
             $api_token = sanitize_text_field($_POST['wassenger_api_token']);
+            $number_id = sanitize_text_field($_POST['wassenger_number_id']);
+            
             update_option('cfwv_wassenger_api_token', $api_token);
+            update_option('cfwv_wassenger_number_id', $number_id);
             
             echo '<div class="notice notice-success"><p>' . __('Settings saved successfully!', 'contact-form-whatsapp') . '</p></div>';
         }
         
         $api_token = get_option('cfwv_wassenger_api_token', '');
+        $number_id = get_option('cfwv_wassenger_number_id', '');
         
         ?>
         <div class="wrap">
@@ -444,6 +448,19 @@ class CFWV_Admin {
                                 <?php _e('Enter your Wassenger API token. You can get this from your Wassenger dashboard.', 'contact-form-whatsapp'); ?>
                                 <br>
                                 <a href="https://api.wassenger.com" target="_blank"><?php _e('Get API Token', 'contact-form-whatsapp'); ?></a>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">
+                            <label for="wassenger_number_id"><?php _e('Wassenger Number ID', 'contact-form-whatsapp'); ?></label>
+                        </th>
+                        <td>
+                            <input type="text" id="wassenger_number_id" name="wassenger_number_id" value="<?php echo esc_attr($number_id); ?>" class="regular-text" required>
+                            <p class="description">
+                                <?php _e('Enter your Wassenger Number ID. This is the device/number identifier from your Wassenger dashboard.', 'contact-form-whatsapp'); ?>
+                                <br>
+                                <a href="https://app.wassenger.com" target="_blank"><?php _e('Get Number ID from Dashboard', 'contact-form-whatsapp'); ?></a>
                             </p>
                         </td>
                     </tr>
@@ -487,11 +504,18 @@ class CFWV_Admin {
             <div class="cfwv-settings-info">
                 <h2><?php _e('How to Use', 'contact-form-whatsapp'); ?></h2>
                 <ol>
-                    <li><?php _e('Configure your Wassenger API token above', 'contact-form-whatsapp'); ?></li>
+                    <li><?php _e('Configure your Wassenger API token and Number ID above', 'contact-form-whatsapp'); ?></li>
                     <li><?php _e('Create a form using the Form Builder', 'contact-form-whatsapp'); ?></li>
                     <li><?php _e('Add the form to your page using the shortcode', 'contact-form-whatsapp'); ?></li>
                     <li><?php _e('View submissions in the Submissions page', 'contact-form-whatsapp'); ?></li>
                 </ol>
+                
+                <h3><?php _e('Wassenger Configuration', 'contact-form-whatsapp'); ?></h3>
+                <p><?php _e('You need both credentials from your Wassenger dashboard:', 'contact-form-whatsapp'); ?></p>
+                <ul>
+                    <li><strong><?php _e('API Token:', 'contact-form-whatsapp'); ?></strong> <?php _e('Your authentication token for API access', 'contact-form-whatsapp'); ?></li>
+                    <li><strong><?php _e('Number ID:', 'contact-form-whatsapp'); ?></strong> <?php _e('The device/number identifier for session sync operations', 'contact-form-whatsapp'); ?></li>
+                </ul>
                 
                 <h3><?php _e('Required Fields', 'contact-form-whatsapp'); ?></h3>
                 <p><?php _e('Every form must have these required fields:', 'contact-form-whatsapp'); ?></p>

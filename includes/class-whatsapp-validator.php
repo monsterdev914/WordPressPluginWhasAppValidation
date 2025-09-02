@@ -12,9 +12,11 @@ class CFWV_WhatsAppValidator {
     
     private $api_url = 'https://api.wassenger.com/v1/numbers/exists';
     private $api_token;
+    private $numberID;
     
     public function __construct() {
         $this->api_token = get_option('cfwv_wassenger_api_token');
+        $this->numberID = get_option('cfwv_wassenger_number_id');
     }
     
     /**
@@ -133,7 +135,7 @@ class CFWV_WhatsAppValidator {
     }
     
     /**
-     * Test API connection
+     * Test API connection using session sync
      */
     public function test_api_connection() {
         if (empty($this->api_token)) {
@@ -143,22 +145,47 @@ class CFWV_WhatsAppValidator {
             );
         }
         
-        // Test with a known WhatsApp number (you can use your own)
-        $test_number = '+1234567890'; // This should be replaced with a real test number
+        if (empty($this->numberID)) {
+            return array(
+                'success' => false,
+                'message' => __('Number ID is required', 'contact-form-whatsapp')
+            );
+        }
         
-        $response = $this->make_api_request($test_number);
-        
+        // Use session sync to test API connection
+        return $this->sync_session_for_wassenger();
+    }
+
+    //sync session for wassenger
+    public function sync_session_for_wassenger() {
+        $numberId = $this->numberID;
+        $response = wp_remote_request("https://api.wassenger.com/v1/devices/{$numberId}/sync", array(
+            'method' => 'GET',
+            'headers' => array(
+                'Content-Type' => 'application/json',
+                'Token' => $this->api_token
+            ),
+            'timeout' => 30
+        ));
         if (is_wp_error($response)) {
             return array(
                 'success' => false,
                 'message' => $response->get_error_message()
             );
         }
-        
-        return array(
-            'success' => true,
-            'message' => __('API connection successful', 'contact-form-whatsapp')
-        );
+        $response_body = wp_remote_retrieve_body($response);
+        $response_data = json_decode($response_body, true);
+        if (isset($response_data['status']) && $response_data['status'] === 'operative') {
+            return array(
+                'success' => true,
+                'message' => __('Session synced successfully', 'contact-form-whatsapp')
+            );
+        } else {
+            return array(
+                'success' => false,
+                'message' => __('Session sync failed, Status: ' . $response_data['status'], 'contact-form-whatsapp')
+            );
+        }
     }
     
     /**

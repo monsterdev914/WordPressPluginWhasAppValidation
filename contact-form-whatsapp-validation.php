@@ -58,6 +58,7 @@ class ContactFormWhatsAppValidation {
         require_once CFWV_PLUGIN_PATH . 'includes/class-whatsapp-validator.php';
         require_once CFWV_PLUGIN_PATH . 'includes/class-admin.php';
         require_once CFWV_PLUGIN_PATH . 'includes/class-frontend.php';
+        require_once CFWV_PLUGIN_PATH . 'includes/class-background-processor.php';
     }
     
     private function init_components() {
@@ -67,6 +68,7 @@ class ContactFormWhatsAppValidation {
             $this->whatsapp_validator = new CFWV_WhatsAppValidator();
             $this->admin = new CFWV_Admin();
             $this->frontend = new CFWV_Frontend();
+            $this->background_processor = new CFWV_BackgroundProcessor();
         } catch (Exception $e) {
             // Log error and show admin notice
             error_log('CFWV Plugin Error: ' . $e->getMessage());
