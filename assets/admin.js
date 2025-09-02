@@ -737,270 +737,41 @@ jQuery(document).ready(function($) {
         });
     });
     
-    // Cron Job Management
-    var CronManager = {
-        init: function() {
-            this.bindEvents();
-        },
-        
-        bindEvents: function() {
-            // Tab switching
-            $(document).on('click', '.nav-tab', this.switchTab);
-            
-            // Toggle cron job
-            $(document).on('click', '.cfwv-toggle-cron', this.toggleCron);
-            
-            // Run cron manually
-            $(document).on('click', '.cfwv-run-cron', this.runCron);
-            
-            // Refresh logs
-            $(document).on('click', '#cfwv-refresh-logs', this.refreshLogs);
-            
-            // Clear logs
-            $(document).on('click', '#cfwv-clear-logs', this.clearLogs);
-            
-            // Save cron settings
-            $(document).on('submit', '#cfwv-cron-settings-form', this.saveSettings);
-        },
-        
-        switchTab: function(e) {
-            e.preventDefault();
-            
-            var targetTab = $(this).data('tab');
-            
-            // Update active tab
-            $('.nav-tab').removeClass('nav-tab-active');
-            $(this).addClass('nav-tab-active');
-            
-            // Show target content
-            $('.cfwv-tab-content').hide();
-            $('#' + targetTab).show();
-        },
-        
-        toggleCron: function(e) {
-            e.preventDefault();
-            
-            var button = $(this);
-            var cronName = button.data('cron');
-            var isEnabled = button.data('enabled') === true;
-            var newState = !isEnabled;
-            
-            var originalText = button.text();
-            button.prop('disabled', true).text('Processing...');
-            
-            $.ajax({
-                url: cfwv_ajax.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'cfwv_toggle_cron',
-                    cron_name: cronName,
-                    enable: newState,
-                    nonce: cfwv_ajax.nonce
-                },
-                success: function(response) {
-                    if (response.success) {
-                        // Update button state
-                        button.data('enabled', newState);
-                        button.text(newState ? 'Disable' : 'Enable');
-                        
-                        // Update status display
-                        var statusCell = button.closest('tr').find('td').eq(3);
-                        if (newState) {
-                            statusCell.html('<span class="cfwv-status-enabled">✅ Enabled</span>');
-                        } else {
-                            statusCell.html('<span class="cfwv-status-disabled">❌ Disabled</span>');
-                        }
-                        
-                        CronManager.showNotice('Cron job updated successfully', 'success');
-                    } else {
-                        CronManager.showNotice('Error: ' + response.data, 'error');
-                        button.text(originalText);
-                    }
-                },
-                error: function() {
-                    CronManager.showNotice('Error updating cron job', 'error');
-                    button.text(originalText);
-                },
-                complete: function() {
-                    button.prop('disabled', false);
-                }
-            });
-        },
-        
-        runCron: function(e) {
-            e.preventDefault();
-            
-            var button = $(this);
-            var cronName = button.data('cron');
-            var originalText = button.text();
-            
-            button.prop('disabled', true).text('Running...');
-            
-            $.ajax({
-                url: cfwv_ajax.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'cfwv_run_cron_manually',
-                    cron_name: cronName,
-                    nonce: cfwv_ajax.nonce
-                },
-                success: function(response) {
-                    if (response.success) {
-                        CronManager.showNotice('Cron job executed successfully', 'success');
-                        // Refresh logs if we're on the logs tab
-                        if ($('#cron-logs').is(':visible')) {
-                            CronManager.refreshLogs();
-                        }
-                    } else {
-                        CronManager.showNotice('Error: ' + response.data, 'error');
-                    }
-                },
-                error: function() {
-                    CronManager.showNotice('Error executing cron job', 'error');
-                },
-                complete: function() {
-                    button.prop('disabled', false).text(originalText);
-                }
-            });
-        },
-        
-        refreshLogs: function(e) {
-            if (e) e.preventDefault();
-            
-            var button = $('#cfwv-refresh-logs');
-            var originalText = button.text();
-            
-            button.prop('disabled', true).text('Refreshing...');
-            
-            $.ajax({
-                url: cfwv_ajax.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'cfwv_get_cron_logs',
-                    nonce: cfwv_ajax.nonce
-                },
-                success: function(response) {
-                    if (response.success) {
-                        CronManager.updateLogsDisplay(response.data);
-                        CronManager.showNotice('Logs refreshed', 'success');
-                    } else {
-                        CronManager.showNotice('Error refreshing logs', 'error');
-                    }
-                },
-                error: function() {
-                    CronManager.showNotice('Error refreshing logs', 'error');
-                },
-                complete: function() {
-                    button.prop('disabled', false).text(originalText);
-                }
-            });
-        },
-        
-        clearLogs: function(e) {
-            e.preventDefault();
-            
-            if (!confirm('Are you sure you want to clear all cron job logs?')) {
-                return;
-            }
-            
-            var button = $(this);
-            var originalText = button.text();
-            
-            button.prop('disabled', true).text('Clearing...');
-            
-            // Clear logs by updating the option
-            $.ajax({
-                url: cfwv_ajax.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'cfwv_clear_cron_logs',
-                    nonce: cfwv_ajax.nonce
-                },
-                success: function(response) {
-                    $('#cfwv-logs-container').html('<p>Logs cleared. New logs will appear here when cron jobs run.</p>');
-                    CronManager.showNotice('Logs cleared successfully', 'success');
-                },
-                error: function() {
-                    CronManager.showNotice('Error clearing logs', 'error');
-                },
-                complete: function() {
-                    button.prop('disabled', false).text(originalText);
-                }
-            });
-        },
-        
-        saveSettings: function(e) {
-            e.preventDefault();
-            
-            var form = $(this);
-            var formData = form.serialize();
-            var submitButton = form.find('input[type="submit"]');
-            var originalText = submitButton.val();
-            
-            submitButton.prop('disabled', true).val('Saving...');
-            
-            $.ajax({
-                url: cfwv_ajax.ajax_url,
-                type: 'POST',
-                data: formData + '&action=cfwv_save_cron_settings&nonce=' + cfwv_ajax.nonce,
-                success: function(response) {
-                    if (response.success) {
-                        CronManager.showNotice('Settings saved successfully', 'success');
-                    } else {
-                        CronManager.showNotice('Error: ' + response.data, 'error');
-                    }
-                },
-                error: function() {
-                    CronManager.showNotice('Error saving settings', 'error');
-                },
-                complete: function() {
-                    submitButton.prop('disabled', false).val(originalText);
-                }
-            });
-        },
-        
-        updateLogsDisplay: function(logs) {
-            var container = $('#cfwv-logs-container');
-            
-            if (logs.length === 0) {
-                container.html('<p>No logs available yet. Logs will appear here when cron jobs run.</p>');
-                return;
-            }
-            
-            var html = '<table class="wp-list-table widefat fixed striped">';
-            html += '<thead><tr>';
-            html += '<th>Time</th>';
-            html += '<th>Level</th>';
-            html += '<th>Message</th>';
-            html += '</tr></thead>';
-            html += '<tbody>';
-            
-            $.each(logs.slice(0, 50), function(index, log) {
-                html += '<tr>';
-                html += '<td>' + log.timestamp + '</td>';
-                html += '<td><span class="cfwv-log-level cfwv-log-' + log.level + '">' + log.level.toUpperCase() + '</span></td>';
-                html += '<td>' + log.message + '</td>';
-                html += '</tr>';
-            });
-            
-            html += '</tbody></table>';
-            container.html(html);
-        },
-        
-        showNotice: function(message, type) {
-            var noticeClass = type === 'success' ? 'notice-success' : 'notice-error';
-            var notice = $('<div class="notice ' + noticeClass + ' is-dismissible"><p>' + message + '</p></div>');
-            
-            $('.wrap h1').after(notice);
-            
-            setTimeout(function() {
-                notice.fadeOut();
-            }, 5000);
-        }
-    };
+    // Log Management
+    $(document).on('click', '#cfwv-refresh-logs', function() {
+        location.reload();
+    });
     
-    // Initialize cron manager if on cron page
-    if ($('.cfwv-cron-tabs').length) {
-        CronManager.init();
-    }
+    $(document).on('click', '#cfwv-clear-logs', function() {
+        if (!confirm('Are you sure you want to clear all background process logs? This action cannot be undone.')) {
+            return;
+        }
+        
+        const $button = $(this);
+        $button.prop('disabled', true).text('🔄 Clearing...');
+        
+        $.ajax({
+            url: cfwv_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'cfwv_clear_logs',
+                nonce: cfwv_ajax.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Refresh the page to show cleared logs
+                    location.reload();
+                } else {
+                    alert('Failed to clear logs: ' + (response.data || 'Unknown error'));
+                }
+            },
+            error: function() {
+                alert('Error occurred while clearing logs');
+            },
+            complete: function() {
+                $button.prop('disabled', false).text('🗑️ Clear Logs');
+            }
+        });
+    });
+    
 }); 
