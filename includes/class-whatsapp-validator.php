@@ -165,7 +165,7 @@ class CFWV_WhatsAppValidator {
                 'Content-Type' => 'application/json',
                 'Token' => $this->api_token
             ),
-            'timeout' => 5000
+            'timeout' => 50000
         ));
         
         if (is_wp_error($response)) {

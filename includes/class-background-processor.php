@@ -21,59 +21,61 @@ class CFWV_BackgroundProcessor {
         // Register cron hooks
         add_action('cfwv_check_api_health', array($this, 'check_api_health'));
         
-        // Schedule cron jobs on plugin activation
-        // register_activation_hook(CFWV_PLUGIN_PATH . 'contact-form-whatsapp-validation.php', array($this, 'schedule_cron_jobs'));
-        register_deactivation_hook(CFWV_PLUGIN_PATH . 'contact-form-whatsapp-validation.php', array($this, 'unschedule_cron_jobs'));
-        
         // Initialize immediately since we're already in the init phase
         $this->init();
     }
     
     public function init() {
-        $this->log_process('🎯 Background processor init() CALLED - Fixed timing issue!');
+        // $this->log_process('🎯 Background processor init() CALLED - Fixed timing issue!');
         
         $this->database = new CFWV_Database();
         $this->whatsapp_validator = new CFWV_WhatsAppValidator();
         
-        $this->log_process('✅ Database and WhatsApp validator initialized');
-        
-        // Auto-schedule cron jobs if not already scheduled
-        $this->auto_schedule_cron_jobs();
-        
-        // Show status on admin dashboard
-        if (is_admin()) {
-            add_action('admin_notices', array($this, 'show_status_notice'));
-        }
-        
-        $this->log_process('✅ Background processor initialization completed');
+        // $this->log_process('✅ Background processor initialization completed');
     }
     
     /**
      * Add custom cron intervals
      */
     public function add_custom_intervals($schedules) {
-        // Add custom intervals for more frequent checks
-        $schedules['every5minutes'] = array(
-            'interval' => 5 * 60,
-            'display'  => __('Every 5 Minutes', 'contact-form-whatsapp')
-        );
+        // Get custom intervals definition
+        $custom_intervals = self::get_custom_intervals_definition();
         
-        $schedules['every10minutes'] = array(
-            'interval' => 10 * 60,
-            'display'  => __('Every 10 Minutes', 'contact-form-whatsapp')
-        );
-        
-        $schedules['every15minutes'] = array(
-            'interval' => 15 * 60,
-            'display'  => __('Every 15 Minutes', 'contact-form-whatsapp')
-        );
-        
-        $schedules['every30minutes'] = array(
-            'interval' => 30 * 60,
-            'display'  => __('Every 30 Minutes', 'contact-form-whatsapp')
-        );
+        // Add custom intervals to the schedules
+        foreach ($custom_intervals as $key => $interval) {
+            $schedules[$key] = $interval;
+        }
         
         return $schedules;
+    }
+    
+    /**
+     * Get the definition of custom intervals
+     * Centralized place for custom interval definitions
+     */
+    public static function get_custom_intervals_definition() {
+        return array(
+            'every1minutes' => array(
+                'interval' => 1 * 60,
+                'display'  => __('Every 1 Minutes', 'contact-form-whatsapp')
+            ),
+            'every5minutes' => array(
+                'interval' => 5 * 60,
+                'display'  => __('Every 5 Minutes', 'contact-form-whatsapp')
+            ),
+            'every10minutes' => array(
+                'interval' => 10 * 60,
+                'display'  => __('Every 10 Minutes', 'contact-form-whatsapp')
+            ),
+            'every15minutes' => array(
+                'interval' => 15 * 60,
+                'display'  => __('Every 15 Minutes', 'contact-form-whatsapp')
+            ),
+            'every30minutes' => array(
+                'interval' => 30 * 60,
+                'display'  => __('Every 30 Minutes', 'contact-form-whatsapp')
+            )
+        );
     }
     
     /**
@@ -90,7 +92,7 @@ class CFWV_BackgroundProcessor {
         $schedules = wp_get_schedules();
         if (!isset($schedules[$interval])) {
             $this->log_process('❌ ERROR: Custom interval "' . $interval . '" not registered! Using hourly instead.');
-            $interval = 'hourly';
+            $interval = 'hourly'; // Use WordPress built-in interval as fallback
         } else {
             $this->log_process('✅ Custom interval "' . $interval . '" is available');
         }
@@ -107,6 +109,67 @@ class CFWV_BackgroundProcessor {
             $next_run = wp_next_scheduled('cfwv_check_api_health');
             $this->log_process('ℹ️ API health monitoring already scheduled - Next run: ' . date('Y-m-d H:i:s', $next_run));
         }
+    }
+    
+    /**
+     * Static method for scheduling cron jobs during plugin activation
+     * WordPress activation hooks ensure this only runs once
+     */
+    public static function activate_background_processor() {
+        self::log_process_static('🔧 Scheduling background processor for plugin activation...');
+        
+        // Preferred interval - try custom first, fallback to built-in WordPress intervals
+        $preferred_interval = 'every5minutes';
+        
+        // Get available schedules and manually add our custom intervals if not present
+        $schedules = wp_get_schedules();
+        
+        // If custom intervals aren't available, add them manually for activation
+        if (!isset($schedules[$preferred_interval])) {
+            // Manually register custom intervals during activation
+            self::register_custom_intervals_during_activation();
+            
+            // Re-get schedules after adding custom intervals
+            $schedules = wp_get_schedules();
+            
+            if (!isset($schedules[$preferred_interval])) {
+                self::log_process_static('❌ Custom intervals still not available. Using built-in WordPress interval.');
+                $preferred_interval = 'hourly'; // Safe fallback to WordPress built-in
+            } else {
+                self::log_process_static('✅ Custom intervals manually registered for activation');
+            }
+        }
+        
+        // Schedule the API health check (WordPress handles the "only once" logic)
+        if (!wp_next_scheduled('cfwv_check_api_health')) {
+            $result = wp_schedule_event(time(), $preferred_interval, 'cfwv_check_api_health');
+            if ($result === false) {
+                self::log_process_static('❌ ERROR: Failed to schedule cron job during activation!');
+            } else {
+                $next_run = wp_next_scheduled('cfwv_check_api_health');
+                self::log_process_static('✅ Background processor scheduled during activation (' . $preferred_interval . ') - Next run: ' . date('Y-m-d H:i:s', $next_run));
+            }
+        } else {
+            $next_run = wp_next_scheduled('cfwv_check_api_health');
+            self::log_process_static('ℹ️ Background processor already scheduled - Next run: ' . date('Y-m-d H:i:s', $next_run));
+        }
+    }
+    
+    /**
+     * Manually register custom intervals during activation when filters might not be available
+     */
+    private static function register_custom_intervals_during_activation() {
+        // Get our custom intervals definition
+        $custom_intervals = self::get_custom_intervals_definition();
+        
+        // Apply the schedules filter manually with high priority
+        add_filter('cron_schedules', function($existing_schedules) use ($custom_intervals) {
+            $merged = array_merge($existing_schedules, $custom_intervals);
+            self::log_process_static('📅 Custom intervals merged: ' . implode(', ', array_keys($custom_intervals)));
+            return $merged;
+        }, 10);
+        
+        self::log_process_static('📅 Custom intervals filter registered during activation');
     }
     
     /**
@@ -129,6 +192,21 @@ class CFWV_BackgroundProcessor {
         $this->log_process('API health monitoring unscheduled');
     }
     
+    /**
+     * Static method for unscheduling cron jobs during plugin deactivation
+     * This doesn't require dependencies to be loaded
+     */
+    public static function deactivate_background_processor() {
+        // Clear API health monitoring cron job
+        $timestamp = wp_next_scheduled('cfwv_check_api_health');
+        if ($timestamp) {
+            wp_unschedule_event($timestamp, 'cfwv_check_api_health');
+            self::log_process_static('✅ Background processor unscheduled during deactivation');
+        } else {
+            self::log_process_static('ℹ️ No scheduled background processor found during deactivation');
+        }
+    }
+    
 
     
     /**
@@ -138,6 +216,17 @@ class CFWV_BackgroundProcessor {
         $this->log_process('Starting API health check');
         
         try {
+            // Ensure dependencies are available
+            if (!$this->whatsapp_validator) {
+                $this->log_process('⚠️ WhatsApp validator not initialized, attempting to initialize...');
+                $this->init();
+            }
+            
+            if (!$this->whatsapp_validator) {
+                $this->log_process('❌ ERROR: WhatsApp validator still not available, skipping API health check');
+                return;
+            }
+            
             // Test API connection
             $api_test = $this->whatsapp_validator->sync_session_for_wassenger();
             $this->log_process('API health check result: ' . print_r($api_test, true));
@@ -211,6 +300,26 @@ class CFWV_BackgroundProcessor {
     }
     
     /**
+     * Static log method for use during activation/deactivation
+     */
+    private static function log_process_static($message) {
+        $timestamp = current_time('mysql');
+        $log_entry = "[{$timestamp}] CFWV Background Process (Static): {$message}";
+        
+        // Log to WordPress error log
+        error_log($log_entry);
+        
+        // Optional: Store in database for debugging (only keep last 100 entries)
+        $logs = get_option('cfwv_background_logs', array());
+        array_unshift($logs, array(
+            'timestamp' => $timestamp,
+            'message' => $message
+        ));
+        $logs = array_slice($logs, 0, 100); // Keep only last 100 entries
+        update_option('cfwv_background_logs', $logs);
+    }
+    
+    /**
      * Get background process status (for debugging)
      */
     public function get_process_status() {
@@ -220,6 +329,8 @@ class CFWV_BackgroundProcessor {
         
         return $cron_jobs;
     }
+    
+
     
     /**
      * Manual trigger for testing (can be called from other functions)
@@ -231,8 +342,32 @@ class CFWV_BackgroundProcessor {
             case 'check_api':
                 $this->check_api_health();
                 break;
+            case 'debug_schedules':
+                $this->debug_available_schedules();
+                break;
             default:
-                $this->log_process('Unknown process name: ' . $process_name . '. Only "check_api" is supported.');
+                $this->log_process('Unknown process name: ' . $process_name . '. Supported: "check_api", "debug_schedules".');
+        }
+    }
+    
+    /**
+     * Debug method to show available cron schedules
+     */
+    public function debug_available_schedules() {
+        $schedules = wp_get_schedules();
+        $custom_intervals = self::get_custom_intervals_definition();
+        
+        $this->log_process('🔍 Available cron schedules:');
+        foreach ($schedules as $key => $schedule) {
+            $interval_mins = $schedule['interval'] / 60;
+            $is_custom = array_key_exists($key, $custom_intervals) ? ' (CUSTOM)' : '';
+            $this->log_process("   - {$key}: {$interval_mins} minutes - {$schedule['display']}{$is_custom}");
+        }
+        
+        $this->log_process('📊 Custom intervals status:');
+        foreach ($custom_intervals as $key => $interval) {
+            $status = isset($schedules[$key]) ? '✅ AVAILABLE' : '❌ MISSING';
+            $this->log_process("   - {$key}: {$status}");
         }
     }
     
