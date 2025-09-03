@@ -51,6 +51,7 @@ class ContactFormWhatsAppValidation {
         add_action('wp_ajax_cfwv_initialize_tables', array($this, 'ajax_initialize_tables'));
         add_action('wp_ajax_cfwv_clear_logs', array($this->admin, 'ajax_clear_logs'));
         add_shortcode('cfwv_form', array($this, 'shortcode_form'));
+        
     }
     
     private function includes() {
@@ -346,6 +347,7 @@ class ContactFormWhatsAppValidation {
         
         return $form_id;
     }
+
 }
 
 // Initialize the plugin

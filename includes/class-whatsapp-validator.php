@@ -167,6 +167,7 @@ class CFWV_WhatsAppValidator {
             ),
             'timeout' => 5000
         ));
+        
         if (is_wp_error($response)) {
             return array(
                 'success' => false,

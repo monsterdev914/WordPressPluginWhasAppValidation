@@ -15,9 +15,6 @@ class CFWV_BackgroundProcessor {
     private $whatsapp_validator;
     
     public function __construct() {
-        // Initialize on WordPress init
-        add_action('init', array($this, 'init'));
-        
         // Register cron schedules
         add_filter('cron_schedules', array($this, 'add_custom_intervals'));
         
@@ -25,14 +22,20 @@ class CFWV_BackgroundProcessor {
         add_action('cfwv_check_api_health', array($this, 'check_api_health'));
         
         // Schedule cron jobs on plugin activation
-        $this->schedule_cron_jobs();
         // register_activation_hook(CFWV_PLUGIN_PATH . 'contact-form-whatsapp-validation.php', array($this, 'schedule_cron_jobs'));
         register_deactivation_hook(CFWV_PLUGIN_PATH . 'contact-form-whatsapp-validation.php', array($this, 'unschedule_cron_jobs'));
+        
+        // Initialize immediately since we're already in the init phase
+        $this->init();
     }
     
     public function init() {
+        $this->log_process('🎯 Background processor init() CALLED - Fixed timing issue!');
+        
         $this->database = new CFWV_Database();
         $this->whatsapp_validator = new CFWV_WhatsAppValidator();
+        
+        $this->log_process('✅ Database and WhatsApp validator initialized');
         
         // Auto-schedule cron jobs if not already scheduled
         $this->auto_schedule_cron_jobs();
@@ -41,6 +44,8 @@ class CFWV_BackgroundProcessor {
         if (is_admin()) {
             add_action('admin_notices', array($this, 'show_status_notice'));
         }
+        
+        $this->log_process('✅ Background processor initialization completed');
     }
     
     /**
@@ -75,15 +80,32 @@ class CFWV_BackgroundProcessor {
      * Schedule cron job for API health monitoring
      */
     public function schedule_cron_jobs() {
+        $this->log_process('🔧 Attempting to schedule cron jobs...');
+        
         // Check API health - you can change the interval here:
         // Options: 'every5minutes', 'every10minutes', 'every15minutes', 'every30minutes', 'hourly', 'twicedaily', 'daily'
         $interval = 'every5minutes'; // ← Change this to your preferred interval
         
-        if (!wp_next_scheduled('cfwv_check_api_health')) {
-            wp_schedule_event(time(), $interval, 'cfwv_check_api_health');
-            $this->log_process('API health monitoring scheduled successfully (' . $interval . ')');
+        // Check if custom intervals are available
+        $schedules = wp_get_schedules();
+        if (!isset($schedules[$interval])) {
+            $this->log_process('❌ ERROR: Custom interval "' . $interval . '" not registered! Using hourly instead.');
+            $interval = 'hourly';
         } else {
-            $this->log_process('API health monitoring already scheduled');
+            $this->log_process('✅ Custom interval "' . $interval . '" is available');
+        }
+        
+        if (!wp_next_scheduled('cfwv_check_api_health')) {
+            $result = wp_schedule_event(time(), $interval, 'cfwv_check_api_health');
+            if ($result === false) {
+                $this->log_process('❌ ERROR: Failed to schedule cron job!');
+            } else {
+                $next_run = wp_next_scheduled('cfwv_check_api_health');
+                $this->log_process('✅ API health monitoring scheduled successfully (' . $interval . ') - Next run: ' . date('Y-m-d H:i:s', $next_run));
+            }
+        } else {
+            $next_run = wp_next_scheduled('cfwv_check_api_health');
+            $this->log_process('ℹ️ API health monitoring already scheduled - Next run: ' . date('Y-m-d H:i:s', $next_run));
         }
     }
     
@@ -118,7 +140,7 @@ class CFWV_BackgroundProcessor {
         try {
             // Test API connection
             $api_test = $this->whatsapp_validator->sync_session_for_wassenger();
-            
+            $this->log_process('API health check result: ' . print_r($api_test, true));
             if (!$api_test['success']) {
                 $this->log_process('API connection failed: ' . $api_test['message']);
                 
@@ -203,6 +225,8 @@ class CFWV_BackgroundProcessor {
      * Manual trigger for testing (can be called from other functions)
      */
     public function run_process_now($process_name = 'check_api') {
+        $this->log_process('🧪 Manual trigger requested: ' . $process_name);
+        
         switch ($process_name) {
             case 'check_api':
                 $this->check_api_health();
