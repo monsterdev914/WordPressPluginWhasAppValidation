@@ -16,6 +16,9 @@ jQuery(document).ready(function($) {
             $(document).on('blur', '.cfwv-whatsapp-field', this.validateWhatsApp);
             $(document).on('input', '.cfwv-whatsapp-field', this.delayedWhatsAppValidation);
             
+            // Country selection
+            $(document).on('change', '.cfwv-country-field', this.handleCountrySelection);
+            
             // Real-time validation
             $(document).on('blur', '.cfwv-field', this.validateField);
             
@@ -336,6 +339,56 @@ jQuery(document).ready(function($) {
                 return true;
             } catch (e) {
                 return false;
+            }
+        },
+        
+        handleCountrySelection: function() {
+            var selectedOption = $(this).find('option:selected');
+            var countryCode = selectedOption.data('country-code');
+            var countryName = selectedOption.text();
+            var infoDiv = $(this).siblings('.cfwv-country-info');
+            var form = $(this).closest('.cfwv-form');
+            
+            if (countryCode && countryName !== 'Select a country') {
+                // Show country info
+                infoDiv.html('<strong>Country Code:</strong> ' + countryCode).show();
+                
+                // Auto-fill WhatsApp fields with the country code
+                var whatsappFields = form.find('.cfwv-whatsapp-field');
+                
+                whatsappFields.each(function() {
+                    var currentVal = $(this).val().trim();
+                    
+                    // Only auto-fill if field is empty or doesn't have a country code
+                    if (!currentVal || (!currentVal.startsWith('+') && /^\d*$/.test(currentVal))) {
+                        $(this).val(countryCode);
+                        $(this).attr('placeholder', countryCode + '1234567890');
+                        
+                        // Focus and position cursor at the end
+                        var input = this;
+                        setTimeout(function() {
+                            input.focus();
+                            if (input.setSelectionRange) {
+                                input.setSelectionRange(input.value.length, input.value.length);
+                            }
+                        }, 50);
+                        
+                        // Show a friendly message
+                        var validationDiv = $(this).siblings('.cfwv-whatsapp-validation');
+                        if (validationDiv.length) {
+                            validationDiv.html('Country code ' + countryCode + ' has been added. Enter your phone number.').removeClass('invalid').addClass('valid');
+                            setTimeout(function() {
+                                validationDiv.empty();
+                            }, 3000);
+                        }
+                    }
+                });
+                
+                // Clear any errors from the country field
+                ContactForm.clearFieldError.call(this);
+                
+            } else {
+                infoDiv.hide();
             }
         }
     };

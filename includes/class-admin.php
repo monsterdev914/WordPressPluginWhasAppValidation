@@ -209,6 +209,48 @@ class CFWV_Admin {
                                     </select>
                                 </td>
                             </tr>
+                            <tr>
+                                <th><label for="default_country_code"><?php _e('Default Country Code', 'contact-form-whatsapp'); ?></label></th>
+                                <td>
+                                    <?php 
+                                    $countries = $this->form_builder->get_country_list();
+                                    $default_country = $form && $form->default_country_code ? $form->default_country_code : '+1';
+                                    ?>
+                                    <select id="default_country_code" name="default_country_code" class="regular-text">
+                                        <?php foreach ($countries as $code => $country): ?>
+                                            <option value="<?php echo esc_attr($country['code']); ?>" <?php selected($default_country, $country['code']); ?>>
+                                                <?php echo esc_html($country['name']) . ' (' . esc_html($country['code']) . ')'; ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <p class="description"><?php _e('Default country code for WhatsApp number fields', 'contact-form-whatsapp'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><label for="admin_phone_numbers"><?php _e('Admin Phone Numbers', 'contact-form-whatsapp'); ?></label></th>
+                                <td>
+                                    <?php 
+                                    $admin_phones = $form && $form_id ? $this->database->get_admin_phone_numbers($form_id) : array();
+                                    ?>
+                                    <div id="cfwv-admin-phones-container">
+                                        <?php if (empty($admin_phones)): ?>
+                                            <div class="cfwv-admin-phone-row">
+                                                <input type="text" name="admin_phone_numbers[]" placeholder="+1234567890" class="regular-text" />
+                                                <button type="button" class="button cfwv-remove-phone" style="margin-left: 5px;"><?php _e('Remove', 'contact-form-whatsapp'); ?></button>
+                                            </div>
+                                        <?php else: ?>
+                                            <?php foreach ($admin_phones as $phone): ?>
+                                                <div class="cfwv-admin-phone-row" style="margin-bottom: 5px;">
+                                                    <input type="text" name="admin_phone_numbers[]" value="<?php echo esc_attr($phone); ?>" placeholder="+1234567890" class="regular-text" />
+                                                    <button type="button" class="button cfwv-remove-phone" style="margin-left: 5px;"><?php _e('Remove', 'contact-form-whatsapp'); ?></button>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </div>
+                                    <button type="button" id="cfwv-add-phone" class="button" style="margin-top: 5px;"><?php _e('Add Phone Number', 'contact-form-whatsapp'); ?></button>
+                                    <p class="description"><?php _e('Phone numbers to receive form submissions via WhatsApp (round-robin distribution)', 'contact-form-whatsapp'); ?></p>
+                                </td>
+                            </tr>
                         </table>
                         
                         <h3><?php _e('Form Styling', 'contact-form-whatsapp'); ?></h3>
@@ -684,6 +726,7 @@ class CFWV_Admin {
             'description' => sanitize_textarea_field($_POST['form_description']),
             'redirect_url' => esc_url_raw($_POST['redirect_url']),
             'status' => sanitize_text_field($_POST['form_status']),
+            'default_country_code' => sanitize_text_field($_POST['default_country_code']),
             'form_styles' => json_encode(array(
                 'background_color' => sanitize_hex_color($_POST['background_color']),
                 'text_color' => sanitize_hex_color($_POST['text_color']),
@@ -696,6 +739,12 @@ class CFWV_Admin {
         $result = $this->database->save_form($form_data);
         
         if ($result) {
+            // Save admin phone numbers
+            if (isset($_POST['admin_phone_numbers']) && is_array($_POST['admin_phone_numbers'])) {
+                $admin_phones = array_map('sanitize_text_field', $_POST['admin_phone_numbers']);
+                $this->database->save_admin_phone_numbers($result, $admin_phones);
+            }
+            
             wp_send_json_success(array('form_id' => $result));
         } else {
             wp_send_json_error(__('Failed to save form', 'contact-form-whatsapp'));

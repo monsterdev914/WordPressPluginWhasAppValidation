@@ -133,6 +133,9 @@ class CFWV_Frontend {
         // Send notification emails (if configured)
         $this->send_notification_emails($form, $clean_form_data, $submission_id);
         
+        // Send WhatsApp message to admin (round-robin)
+        $this->send_admin_whatsapp_notification($form, $clean_form_data, $submission_id);
+        
         // Prepare response
         $response = array(
             'success' => true,
@@ -275,6 +278,7 @@ class CFWV_Frontend {
                 return sanitize_textarea_field($value);
                 
             case 'select':
+            case 'country':
                 return sanitize_text_field($value);
                 
             default:
@@ -327,6 +331,51 @@ class CFWV_Frontend {
             $user_message .= get_bloginfo('name') . "\n";
             
             wp_mail($user_email, $user_subject, $user_message);
+        }
+    }
+    
+    /**
+     * Send WhatsApp notification to admin using round-robin
+     */
+    private function send_admin_whatsapp_notification($form, $form_data, $submission_id) {
+        // Get next admin phone number using round-robin
+        $admin_phone = $this->database->get_next_admin_phone($form->id);
+        
+        if (!$admin_phone) {
+            error_log('CFWV: No admin phone numbers configured for form ID ' . $form->id);
+            return false;
+        }
+        
+        // Prepare WhatsApp message content
+        $message = sprintf(__('🔔 New form submission from %s', 'contact-form-whatsapp'), get_bloginfo('name')) . "\n\n";
+        $message .= sprintf(__('Form: %s', 'contact-form-whatsapp'), $form->name) . "\n";
+        $message .= str_repeat('─', 30) . "\n\n";
+        
+        foreach ($form_data as $field_name => $field_value) {
+            $field_label = ucfirst(str_replace('_', ' ', $field_name));
+            $message .= "📋 *{$field_label}:* {$field_value}\n";
+        }
+        
+        $message .= "\n" . str_repeat('─', 30) . "\n";
+        $message .= sprintf(__('📊 Submission ID: %s', 'contact-form-whatsapp'), $submission_id) . "\n";
+        $message .= sprintf(__('🕒 Submitted: %s', 'contact-form-whatsapp'), date('Y-m-d H:i:s')) . "\n";
+        $message .= sprintf(__('🔗 View: %s', 'contact-form-whatsapp'), admin_url('admin.php?page=cfwv-submissions')) . "\n\n";
+        $message .= __('💬 This message was sent via round-robin to admin team', 'contact-form-whatsapp');
+        
+        // Send WhatsApp message to admin
+        try {
+            $send_result = $this->whatsapp_validator->send_message($admin_phone, $message);
+            
+            if ($send_result['success']) {
+                error_log("CFWV: Admin WhatsApp notification sent successfully to {$admin_phone} for submission {$submission_id}");
+                return true;
+            } else {
+                error_log("CFWV: Failed to send admin WhatsApp notification to {$admin_phone}: " . $send_result['message']);
+                return false;
+            }
+        } catch (Exception $e) {
+            error_log("CFWV: Exception sending admin WhatsApp notification: " . $e->getMessage());
+            return false;
         }
     }
     

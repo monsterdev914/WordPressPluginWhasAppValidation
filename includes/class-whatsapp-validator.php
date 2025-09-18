@@ -211,6 +211,79 @@ class CFWV_WhatsAppValidator {
     }
     
     /**
+     * Send WhatsApp message
+     */
+    public function send_message($to_number, $message) {
+        if (empty($this->api_token)) {
+            return array(
+                'success' => false,
+                'message' => __('WhatsApp API token not configured', 'contact-form-whatsapp')
+            );
+        }
+        
+        if (empty($this->numberID)) {
+            return array(
+                'success' => false,
+                'message' => __('Number ID not configured', 'contact-form-whatsapp')
+            );
+        }
+        
+        // Clean the phone number
+        $to_number = $this->clean_phone_number($to_number);
+        
+        if (empty($to_number)) {
+            return array(
+                'success' => false,
+                'message' => __('Invalid phone number format', 'contact-form-whatsapp')
+            );
+        }
+        
+        // Prepare API request
+        $api_url = "https://api.wassenger.com/v1/messages";
+        
+        $args = array(
+            'method' => 'POST',
+            'headers' => array(
+                'Content-Type' => 'application/json',
+                'Token' => $this->api_token
+            ),
+            'body' => json_encode(array(
+                'phone' => $to_number,
+                'message' => $message,
+                'device' => $this->numberID
+            )),
+            'timeout' => 30
+        );
+        
+        $response = wp_remote_request($api_url, $args);
+        
+        if (is_wp_error($response)) {
+            return array(
+                'success' => false,
+                'message' => $response->get_error_message()
+            );
+        }
+        
+        $response_code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+        
+        if ($response_code === 200 || $response_code === 201) {
+            return array(
+                'success' => true,
+                'message' => __('WhatsApp message sent successfully', 'contact-form-whatsapp'),
+                'data' => $data
+            );
+        } else {
+            $error_message = isset($data['message']) ? $data['message'] : sprintf(__('API request failed with status code: %d', 'contact-form-whatsapp'), $response_code);
+            return array(
+                'success' => false,
+                'message' => $error_message
+            );
+        }
+    }
+    
+    /**
      * Get supported country codes
      */
     public function get_supported_countries() {

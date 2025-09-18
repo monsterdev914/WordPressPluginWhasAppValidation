@@ -38,6 +38,9 @@ class CFWV_Database {
             description text,
             redirect_url varchar(500),
             form_styles text,
+            default_country_code varchar(10) DEFAULT '+1',
+            admin_phone_numbers text,
+            last_admin_phone_used int DEFAULT 0,
             status enum('active', 'inactive') DEFAULT 'active',
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -50,7 +53,7 @@ class CFWV_Database {
             form_id mediumint(9) NOT NULL,
             field_name varchar(255) NOT NULL,
             field_label varchar(255) NOT NULL,
-            field_type enum('text', 'email', 'tel', 'textarea', 'select', 'whatsapp') NOT NULL,
+            field_type enum('text', 'email', 'tel', 'textarea', 'select', 'whatsapp', 'country') NOT NULL,
             field_options text,
             is_required tinyint(1) DEFAULT 0,
             field_order int DEFAULT 0,
@@ -237,6 +240,61 @@ class CFWV_Database {
         }
         
         return $submission_id;
+    }
+    
+    /**
+     * Get next admin phone number using round-robin
+     */
+    public function get_next_admin_phone($form_id) {
+        $form = $this->get_form($form_id);
+        if (!$form || empty($form->admin_phone_numbers)) {
+            return null;
+        }
+        
+        $admin_phones = json_decode($form->admin_phone_numbers, true);
+        if (empty($admin_phones)) {
+            return null;
+        }
+        
+        $last_used = (int)$form->last_admin_phone_used;
+        $next_index = ($last_used + 1) % count($admin_phones);
+        
+        // Update the last used index
+        $this->wpdb->update(
+            $this->forms_table,
+            array('last_admin_phone_used' => $next_index),
+            array('id' => $form_id)
+        );
+        
+        return $admin_phones[$next_index];
+    }
+    
+    /**
+     * Save admin phone numbers for a form
+     */
+    public function save_admin_phone_numbers($form_id, $phone_numbers) {
+        $phones_json = json_encode(array_values(array_filter($phone_numbers)));
+        
+        return $this->wpdb->update(
+            $this->forms_table,
+            array(
+                'admin_phone_numbers' => $phones_json,
+                'last_admin_phone_used' => 0 // Reset round-robin
+            ),
+            array('id' => $form_id)
+        );
+    }
+    
+    /**
+     * Get admin phone numbers for a form
+     */
+    public function get_admin_phone_numbers($form_id) {
+        $form = $this->get_form($form_id);
+        if (!$form || empty($form->admin_phone_numbers)) {
+            return array();
+        }
+        
+        return json_decode($form->admin_phone_numbers, true) ?: array();
     }
     
     /**

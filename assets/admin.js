@@ -17,6 +17,9 @@ jQuery(document).ready(function($) {
             $(document).off('click', '.cfwv-delete-form');
             $(document).off('click', '.cfwv-save-field');
             $(document).off('click', '.cfwv-cancel-field');
+            $(document).off('click', '#cfwv-add-phone');
+            $(document).off('click', '.cfwv-remove-phone');
+            $(document).off('change', '.cfwv-country-field');
             
             // Add field buttons
             $(document).on('click', '.cfwv-add-field', this.addField);
@@ -47,6 +50,13 @@ jQuery(document).ready(function($) {
             
             // Modal close
             $(document).on('click', '.cfwv-modal-close', this.closeModal);
+            
+            // Admin phone management
+            $(document).on('click', '#cfwv-add-phone', this.addPhoneNumber);
+            $(document).on('click', '.cfwv-remove-phone', this.removePhoneNumber);
+            
+            // Country selection change
+            $(document).on('change', '.cfwv-country-field', this.countrySelectionChange);
             
             // Test API
             $(document).on('click', '#cfwv-test-api', this.testAPI);
@@ -479,6 +489,68 @@ jQuery(document).ready(function($) {
             setTimeout(function() {
                 notice.fadeOut();
             }, 5000);
+        },
+        
+        // Admin phone number management
+        addPhoneNumber: function(e) {
+            e.preventDefault();
+            
+            var container = $('#cfwv-admin-phones-container');
+            var newRow = $('<div class="cfwv-admin-phone-row" style="margin-bottom: 5px;">' +
+                '<input type="text" name="admin_phone_numbers[]" placeholder="+1234567890" class="regular-text" />' +
+                '<button type="button" class="button cfwv-remove-phone" style="margin-left: 5px;">Remove</button>' +
+                '</div>');
+            
+            container.append(newRow);
+            newRow.find('input').focus();
+        },
+        
+        removePhoneNumber: function(e) {
+            e.preventDefault();
+            
+            var container = $('#cfwv-admin-phones-container');
+            var phoneRows = container.find('.cfwv-admin-phone-row');
+            
+            // Keep at least one phone number field
+            if (phoneRows.length > 1) {
+                $(this).closest('.cfwv-admin-phone-row').remove();
+            } else {
+                // If only one left, just clear the value
+                $(this).closest('.cfwv-admin-phone-row').find('input').val('');
+            }
+        },
+        
+        // Country selection change handler
+        countrySelectionChange: function(e) {
+            var selectedOption = $(this).find('option:selected');
+            var countryCode = selectedOption.data('country-code');
+            var countryName = selectedOption.text();
+            var infoDiv = $(this).siblings('.cfwv-country-info');
+            
+            if (countryCode && countryName) {
+                infoDiv.html('<strong>Country Code:</strong> ' + countryCode).show();
+                
+                // Auto-fill any WhatsApp fields in the same form with the country code
+                var form = $(this).closest('form');
+                var whatsappFields = form.find('.cfwv-whatsapp-field');
+                
+                whatsappFields.each(function() {
+                    var currentVal = $(this).val();
+                    // Only auto-fill if the field is empty or doesn't already have a country code
+                    if (!currentVal || (!currentVal.startsWith('+') && !currentVal.match(/^\d+$/))) {
+                        $(this).attr('placeholder', countryCode + '1234567890');
+                        $(this).val(countryCode);
+                        $(this).focus();
+                        // Move cursor to end
+                        var input = this;
+                        setTimeout(function() {
+                            input.setSelectionRange(input.value.length, input.value.length);
+                        }, 10);
+                    }
+                });
+            } else {
+                infoDiv.hide();
+            }
         }
     };
     
