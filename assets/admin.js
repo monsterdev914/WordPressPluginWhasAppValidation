@@ -17,9 +17,6 @@ jQuery(document).ready(function($) {
             $(document).off('click', '.cfwv-delete-form');
             $(document).off('click', '.cfwv-save-field');
             $(document).off('click', '.cfwv-cancel-field');
-            $(document).off('click', '#cfwv-add-phone');
-            $(document).off('click', '.cfwv-remove-phone');
-            $(document).off('change', '.cfwv-country-field');
             
             // Add field buttons
             $(document).on('click', '.cfwv-add-field', this.addField);
@@ -50,13 +47,6 @@ jQuery(document).ready(function($) {
             
             // Modal close
             $(document).on('click', '.cfwv-modal-close', this.closeModal);
-            
-            // Admin phone management
-            $(document).on('click', '#cfwv-add-phone', this.addPhoneNumber);
-            $(document).on('click', '.cfwv-remove-phone', this.removePhoneNumber);
-            
-            // Country selection change
-            $(document).on('change', '.cfwv-country-field', this.countrySelectionChange);
             
             // Test API
             $(document).on('click', '#cfwv-test-api', this.testAPI);
@@ -491,66 +481,41 @@ jQuery(document).ready(function($) {
             }, 5000);
         },
         
-        // Admin phone number management
-        addPhoneNumber: function(e) {
+        migrateLegacy: function(e) {
             e.preventDefault();
             
-            var container = $('#cfwv-admin-phones-container');
-            var newRow = $('<div class="cfwv-admin-phone-row" style="margin-bottom: 5px;">' +
-                '<input type="text" name="admin_phone_numbers[]" placeholder="+1234567890" class="regular-text" />' +
-                '<button type="button" class="button cfwv-remove-phone" style="margin-left: 5px;">Remove</button>' +
-                '</div>');
+            var button = $(this);
+            var resultDiv = $('#cfwv-api-test-result');
+            var originalText = button.text();
             
-            container.append(newRow);
-            newRow.find('input').focus();
-        },
-        
-        removePhoneNumber: function(e) {
-            e.preventDefault();
+            button.prop('disabled', true).text('Migrating...');
+            resultDiv.html('<p>Migrating legacy settings...</p>');
             
-            var container = $('#cfwv-admin-phones-container');
-            var phoneRows = container.find('.cfwv-admin-phone-row');
-            
-            // Keep at least one phone number field
-            if (phoneRows.length > 1) {
-                $(this).closest('.cfwv-admin-phone-row').remove();
-            } else {
-                // If only one left, just clear the value
-                $(this).closest('.cfwv-admin-phone-row').find('input').val('');
-            }
-        },
-        
-        // Country selection change handler
-        countrySelectionChange: function(e) {
-            var selectedOption = $(this).find('option:selected');
-            var countryCode = selectedOption.data('country-code');
-            var countryName = selectedOption.text();
-            var infoDiv = $(this).siblings('.cfwv-country-info');
-            
-            if (countryCode && countryName) {
-                infoDiv.html('<strong>Country Code:</strong> ' + countryCode).show();
-                
-                // Auto-fill any WhatsApp fields in the same form with the country code
-                var form = $(this).closest('form');
-                var whatsappFields = form.find('.cfwv-whatsapp-field');
-                
-                whatsappFields.each(function() {
-                    var currentVal = $(this).val();
-                    // Only auto-fill if the field is empty or doesn't already have a country code
-                    if (!currentVal || (!currentVal.startsWith('+') && !currentVal.match(/^\d+$/))) {
-                        $(this).attr('placeholder', countryCode + '1234567890');
-                        $(this).val(countryCode);
-                        $(this).focus();
-                        // Move cursor to end
-                        var input = this;
-                        setTimeout(function() {
-                            input.setSelectionRange(input.value.length, input.value.length);
-                        }, 10);
+            $.ajax({
+                url: cfwv_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'cfwv_migrate_legacy',
+                    nonce: cfwv_ajax.nonce
+                },
+                success: function(response) {
+                    var className = response.success ? 'notice-success' : 'notice-error';
+                    resultDiv.html('<div class="notice ' + className + '"><p>' + response.data.message + '</p></div>');
+                    
+                    if (response.success) {
+                        // Reload the accounts table
+                        if (typeof loadAccountsTable === 'function') {
+                            loadAccountsTable();
+                        }
                     }
-                });
-            } else {
-                infoDiv.hide();
-            }
+                },
+                error: function() {
+                    resultDiv.html('<div class="notice notice-error"><p>Error migrating legacy settings. Please try again.</p></div>');
+                },
+                complete: function() {
+                    button.prop('disabled', false).text(originalText);
+                }
+            });
         }
     };
     
@@ -662,6 +627,40 @@ jQuery(document).ready(function($) {
         // Bind admin functions for settings and other pages
         $(document).on('click', '#cfwv-test-api', FormBuilder.testAPI);
         $(document).on('click', '#cfwv-initialize-tables', FormBuilder.initializeTables);
+        $(document).on('click', '#cfwv-migrate-legacy', FormBuilder.migrateLegacy);
+        
+        // Save Settings
+        $(document).on('click', '#cfwv-save-settings', function(e) {
+            e.preventDefault();
+            
+            var button = $(this);
+            var originalText = button.text();
+            
+            button.prop('disabled', true).text('Saving...');
+            
+            $.ajax({
+                url: cfwv_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'cfwv_save_settings',
+                    default_dashboard_url: $('#default_dashboard_url').val(),
+                    nonce: cfwv_ajax.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showNotice('Settings saved successfully!', 'success');
+                    } else {
+                        showNotice('Error: ' + response.data, 'error');
+                    }
+                },
+                error: function() {
+                    showNotice('Error saving settings. Please try again.', 'error');
+                },
+                complete: function() {
+                    button.prop('disabled', false).text(originalText);
+                }
+            });
+        });
     }
     
     if ($('.cfwv-submissions').length) {
@@ -845,5 +844,120 @@ jQuery(document).ready(function($) {
             }
         });
     });
+    
+    // Wassenger Accounts Management
+    $(document).on('submit', '#cfwv-add-account-form', function(e) {
+        e.preventDefault();
+        
+        var form = $(this);
+        var formData = form.serialize();
+        var submitButton = form.find('button[type="submit"]');
+        var originalText = submitButton.text();
+        
+        // Prevent multiple submissions
+        if (submitButton.data('submitting')) {
+            return;
+        }
+        
+        submitButton.prop('disabled', true).text('Adding...').data('submitting', true);
+        
+        $.ajax({
+            url: cfwv_ajax.ajax_url,
+            type: 'POST',
+            data: formData + '&action=cfwv_add_wassenger_account&nonce=' + cfwv_ajax.nonce,
+            success: function(response) {
+                if (response.success) {
+                    // Show success message
+                    showNotice('Wassenger account added successfully!', 'success');
+                    
+                    // Clear form
+                    form[0].reset();
+                    
+                    // Reload accounts table
+                    loadAccountsTable();
+                } else {
+                    showNotice('Error: ' + response.data, 'error');
+                }
+            },
+            error: function() {
+                showNotice('Error adding Wassenger account. Please try again.', 'error');
+            },
+            complete: function() {
+                submitButton.prop('disabled', false).text(originalText).data('submitting', false);
+            }
+        });
+    });
+    
+    $(document).on('click', '.cfwv-delete-account', function(e) {
+        e.preventDefault();
+        
+        var accountId = $(this).data('account-id');
+        var accountName = $(this).data('account-name');
+        
+        if (!confirm('Are you sure you want to delete the Wassenger account "' + accountName + '"? This action cannot be undone.')) {
+            return;
+        }
+        
+        var button = $(this);
+        var originalText = button.text();
+        
+        button.prop('disabled', true).text('Deleting...');
+        
+        $.ajax({
+            url: cfwv_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'cfwv_delete_wassenger_account',
+                account_id: accountId,
+                nonce: cfwv_ajax.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotice('Wassenger account deleted successfully!', 'success');
+                    loadAccountsTable();
+                } else {
+                    showNotice('Error: ' + response.data, 'error');
+                }
+            },
+            error: function() {
+                showNotice('Error deleting Wassenger account. Please try again.', 'error');
+            },
+            complete: function() {
+                button.prop('disabled', false).text(originalText);
+            }
+        });
+    });
+    
+    // Function to load accounts table
+    function loadAccountsTable() {
+        $.ajax({
+            url: cfwv_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'cfwv_get_wassenger_accounts',
+                nonce: cfwv_ajax.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#cfwv-accounts-table').html(response.data);
+                }
+            },
+            error: function() {
+                console.error('Error loading accounts table');
+            }
+        });
+    }
+    
+    // Function to show notices
+    function showNotice(message, type) {
+        var noticeClass = type === 'success' ? 'notice-success' : 'notice-error';
+        var notice = $('<div class="notice ' + noticeClass + ' is-dismissible"><p>' + message + '</p></div>');
+        
+        $('.wrap h1').after(notice);
+        
+        setTimeout(function() {
+            notice.fadeOut();
+        }, 5000);
+    }
     
 }); 

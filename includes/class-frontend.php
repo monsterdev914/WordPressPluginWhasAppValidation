@@ -121,32 +121,55 @@ class CFWV_Frontend {
         }
         
         // Save submission to database
-        $submission_id = $this->database->save_submission($form_id, $whatsapp_number, $whatsapp_validated, $clean_form_data);
+        $submission_result = $this->database->save_submission($form_id, $whatsapp_number, $whatsapp_validated, $clean_form_data);
         
-        if (!$submission_id) {
+        // Check if it's a duplicate phone error
+        if (is_array($submission_result) && isset($submission_result['error']) && $submission_result['error'] === 'duplicate_phone') {
+            return array(
+                'success' => false,
+                'message' => $submission_result['message']
+            );
+        }
+        
+        if (!$submission_result) {
             return array(
                 'success' => false,
                 'message' => __('Failed to save submission. Please try again.', 'contact-form-whatsapp')
             );
         }
         
-        // Send notification emails (if configured)
-        $this->send_notification_emails($form, $clean_form_data, $submission_id);
+        $submission_id = $submission_result;
         
-        // Send WhatsApp message to admin (round-robin)
-        $this->send_admin_whatsapp_notification($form, $clean_form_data, $submission_id);
+        // Create OTP session and send OTP
+        $otp_handler = new CFWV_OTPHandler();
+        $otp_result = $otp_handler->create_otp_session($submission_id, $whatsapp_number, $form->name);
         
-        // Prepare response
+        // Log for debugging
+        error_log('CFWV: OTP session creation result: ' . print_r($otp_result, true));
+        
+        if (!$otp_result['success']) {
+            return array(
+                'success' => false,
+                'message' => $otp_result['message']
+            );
+        }
+        
+        // Prepare OTP verification response
+        $verification_url = $this->get_otp_verification_url($otp_result['session_token'], $form->redirect_url);
+        
         $response = array(
             'success' => true,
-            'message' => __('Form submitted successfully!', 'contact-form-whatsapp'),
-            'submission_id' => $submission_id
+            'message' => __('Form submitted! Please verify your phone number.', 'contact-form-whatsapp'),
+            'submission_id' => $submission_id,
+            'otp_verification' => true,
+            'session_token' => $otp_result['session_token'],
+            'verification_url' => $verification_url
         );
         
-        // Add redirect URL if configured
-        if (!empty($form->redirect_url)) {
-            $response['redirect_url'] = $form->redirect_url;
-        }
+        // Log for debugging
+        error_log('CFWV: Final response: ' . print_r($response, true));
+        error_log('CFWV: Verification URL: ' . $verification_url);
+        error_log('CFWV: Session token: ' . $otp_result['session_token']);
         
         return $response;
     }
@@ -278,7 +301,6 @@ class CFWV_Frontend {
                 return sanitize_textarea_field($value);
                 
             case 'select':
-            case 'country':
                 return sanitize_text_field($value);
                 
             default:
@@ -331,51 +353,6 @@ class CFWV_Frontend {
             $user_message .= get_bloginfo('name') . "\n";
             
             wp_mail($user_email, $user_subject, $user_message);
-        }
-    }
-    
-    /**
-     * Send WhatsApp notification to admin using round-robin
-     */
-    private function send_admin_whatsapp_notification($form, $form_data, $submission_id) {
-        // Get next admin phone number using round-robin
-        $admin_phone = $this->database->get_next_admin_phone($form->id);
-        
-        if (!$admin_phone) {
-            error_log('CFWV: No admin phone numbers configured for form ID ' . $form->id);
-            return false;
-        }
-        
-        // Prepare WhatsApp message content
-        $message = sprintf(__('🔔 New form submission from %s', 'contact-form-whatsapp'), get_bloginfo('name')) . "\n\n";
-        $message .= sprintf(__('Form: %s', 'contact-form-whatsapp'), $form->name) . "\n";
-        $message .= str_repeat('─', 30) . "\n\n";
-        
-        foreach ($form_data as $field_name => $field_value) {
-            $field_label = ucfirst(str_replace('_', ' ', $field_name));
-            $message .= "📋 *{$field_label}:* {$field_value}\n";
-        }
-        
-        $message .= "\n" . str_repeat('─', 30) . "\n";
-        $message .= sprintf(__('📊 Submission ID: %s', 'contact-form-whatsapp'), $submission_id) . "\n";
-        $message .= sprintf(__('🕒 Submitted: %s', 'contact-form-whatsapp'), date('Y-m-d H:i:s')) . "\n";
-        $message .= sprintf(__('🔗 View: %s', 'contact-form-whatsapp'), admin_url('admin.php?page=cfwv-submissions')) . "\n\n";
-        $message .= __('💬 This message was sent via round-robin to admin team', 'contact-form-whatsapp');
-        
-        // Send WhatsApp message to admin
-        try {
-            $send_result = $this->whatsapp_validator->send_message($admin_phone, $message);
-            
-            if ($send_result['success']) {
-                error_log("CFWV: Admin WhatsApp notification sent successfully to {$admin_phone} for submission {$submission_id}");
-                return true;
-            } else {
-                error_log("CFWV: Failed to send admin WhatsApp notification to {$admin_phone}: " . $send_result['message']);
-                return false;
-            }
-        } catch (Exception $e) {
-            error_log("CFWV: Exception sending admin WhatsApp notification: " . $e->getMessage());
-            return false;
         }
     }
     
@@ -522,5 +499,26 @@ class CFWV_Frontend {
             'valid' => true,
             'message' => __('Form configuration is valid', 'contact-form-whatsapp')
         );
+    }
+    
+    /**
+     * Get OTP verification URL
+     */
+    private function get_otp_verification_url($session_token, $redirect_url = '') {
+        $verification_url = add_query_arg(array(
+            'cfwv_otp_verify' => '1',
+            'token' => $session_token
+        ), home_url());
+        
+        // Use form redirect URL, or fall back to default dashboard URL
+        if (empty($redirect_url)) {
+            $redirect_url = get_option('cfwv_default_dashboard_url', '');
+        }
+        
+        if (!empty($redirect_url)) {
+            $verification_url = add_query_arg('redirect_url', urlencode($redirect_url), $verification_url);
+        }
+        
+        return $verification_url;
     }
 } 

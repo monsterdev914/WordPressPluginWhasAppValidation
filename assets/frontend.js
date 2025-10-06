@@ -16,9 +16,6 @@ jQuery(document).ready(function($) {
             $(document).on('blur', '.cfwv-whatsapp-field', this.validateWhatsApp);
             $(document).on('input', '.cfwv-whatsapp-field', this.delayedWhatsAppValidation);
             
-            // Country selection
-            $(document).on('change', '.cfwv-country-field', this.handleCountrySelection);
-            
             // Real-time validation
             $(document).on('blur', '.cfwv-field', this.validateField);
             
@@ -58,17 +55,66 @@ jQuery(document).ready(function($) {
                     nonce: cfwv_ajax.nonce
                 },
                 success: function(response) {
+                    console.log('Form submission response:', response); // Debug log
+                    
                     if (response.success) {
-                        ContactForm.showSuccess(form, response.message);
-                        
-                        // Reset form
-                        form[0].reset();
-                        
-                        // Redirect if URL provided
-                        if (response.redirect_url) {
-                            setTimeout(function() {
-                                window.location.href = response.redirect_url;
-                            }, 2000);
+                        if (response.otp_verification) {
+                            console.log('OTP verification required, redirecting to:', response.verification_url); // Debug log
+                            
+                            // Show OTP verification message with manual redirect option
+                            ContactForm.showOTPSuccess(form, response.message, response.verification_url);
+                            
+                            // Redirect to OTP verification page with a short delay to ensure message is shown
+                            console.log('Redirecting to verification page...'); // Debug log
+                            
+                            if (response.verification_url) {
+                                // Show message for 1 second, then redirect
+                                setTimeout(function() {
+                                    console.log('Executing redirect to:', response.verification_url);
+                                    
+                                    // Try multiple redirect methods
+                                    try {
+                                        // Method 1: Direct assignment
+                                        window.location.href = response.verification_url;
+                                        
+                                        // Method 2: Fallback after 500ms
+                                        setTimeout(function() {
+                                            if (window.location.href.indexOf('cfwv_otp_verify') === -1) {
+                                                console.log('Fallback redirect triggered');
+                                                window.location.replace(response.verification_url);
+                                            }
+                                        }, 500);
+                                        
+                                        // Method 3: Final fallback after 1 second
+                                        setTimeout(function() {
+                                            if (window.location.href.indexOf('cfwv_otp_verify') === -1) {
+                                                console.log('Final fallback redirect triggered');
+                                                document.location.href = response.verification_url;
+                                            }
+                                        }, 1000);
+                                        
+                                    } catch (error) {
+                                        console.error('Redirect error:', error);
+                                        // Show manual redirect option
+                                        ContactForm.showOTPSuccess(form, response.message + ' Please click the link below to continue.', response.verification_url);
+                                    }
+                                }, 1000);
+                            } else {
+                                console.error('No verification URL provided in response');
+                                ContactForm.showError(form, 'No verification URL provided. Please contact support.');
+                            }
+                        } else {
+                            ContactForm.showSuccess(form, response.message);
+                            
+                            // Reset form
+                            form[0].reset();
+                            
+                            // Redirect if URL provided
+                            if (response.redirect_url) {
+                                setTimeout(function() {
+                                    window.location.href = response.redirect_url;
+                                }, 2000);
+                            }
                         }
                     } else {
                         ContactForm.showError(form, response.message, response.errors);
@@ -286,6 +332,21 @@ jQuery(document).ready(function($) {
             }, 500);
         },
         
+        showOTPSuccess: function(form, message, verificationUrl) {
+            var messagesDiv = form.find('.cfwv-messages');
+            var successHtml = '<div class="cfwv-message success">' + message + '</div>';
+            successHtml += '<div class="cfwv-redirect-info">';
+            successHtml += '<p>You will be redirected to the verification page automatically...</p>';
+            successHtml += '<p>If you are not redirected, <a href="' + verificationUrl + '" class="cfwv-manual-redirect">click here to verify your code</a></p>';
+            successHtml += '</div>';
+            messagesDiv.html(successHtml);
+            
+            // Scroll to message
+            $('html, body').animate({
+                scrollTop: messagesDiv.offset().top - 50
+            }, 500);
+        },
+        
         showError: function(form, message, errors) {
             var messagesDiv = form.find('.cfwv-messages');
             var errorHtml = '<div class="cfwv-message error">' + message + '</div>';
@@ -339,56 +400,6 @@ jQuery(document).ready(function($) {
                 return true;
             } catch (e) {
                 return false;
-            }
-        },
-        
-        handleCountrySelection: function() {
-            var selectedOption = $(this).find('option:selected');
-            var countryCode = selectedOption.data('country-code');
-            var countryName = selectedOption.text();
-            var infoDiv = $(this).siblings('.cfwv-country-info');
-            var form = $(this).closest('.cfwv-form');
-            
-            if (countryCode && countryName !== 'Select a country') {
-                // Show country info
-                infoDiv.html('<strong>Country Code:</strong> ' + countryCode).show();
-                
-                // Auto-fill WhatsApp fields with the country code
-                var whatsappFields = form.find('.cfwv-whatsapp-field');
-                
-                whatsappFields.each(function() {
-                    var currentVal = $(this).val().trim();
-                    
-                    // Only auto-fill if field is empty or doesn't have a country code
-                    if (!currentVal || (!currentVal.startsWith('+') && /^\d*$/.test(currentVal))) {
-                        $(this).val(countryCode);
-                        $(this).attr('placeholder', countryCode + '1234567890');
-                        
-                        // Focus and position cursor at the end
-                        var input = this;
-                        setTimeout(function() {
-                            input.focus();
-                            if (input.setSelectionRange) {
-                                input.setSelectionRange(input.value.length, input.value.length);
-                            }
-                        }, 50);
-                        
-                        // Show a friendly message
-                        var validationDiv = $(this).siblings('.cfwv-whatsapp-validation');
-                        if (validationDiv.length) {
-                            validationDiv.html('Country code ' + countryCode + ' has been added. Enter your phone number.').removeClass('invalid').addClass('valid');
-                            setTimeout(function() {
-                                validationDiv.empty();
-                            }, 3000);
-                        }
-                    }
-                });
-                
-                // Clear any errors from the country field
-                ContactForm.clearFieldError.call(this);
-                
-            } else {
-                infoDiv.hide();
             }
         }
     };
