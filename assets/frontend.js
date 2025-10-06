@@ -55,17 +55,66 @@ jQuery(document).ready(function($) {
                     nonce: cfwv_ajax.nonce
                 },
                 success: function(response) {
+                    console.log('Form submission response:', response); // Debug log
+                    
                     if (response.success) {
-                        ContactForm.showSuccess(form, response.message);
-                        
-                        // Reset form
-                        form[0].reset();
-                        
-                        // Redirect if URL provided
-                        if (response.redirect_url) {
-                            setTimeout(function() {
-                                window.location.href = response.redirect_url;
-                            }, 2000);
+                        if (response.otp_verification) {
+                            console.log('OTP verification required, redirecting to:', response.verification_url); // Debug log
+                            
+                            // Show OTP verification message with manual redirect option
+                            ContactForm.showOTPSuccess(form, response.message, response.verification_url);
+                            
+                            // Redirect to OTP verification page with a short delay to ensure message is shown
+                            console.log('Redirecting to verification page...'); // Debug log
+                            
+                            if (response.verification_url) {
+                                // Show message for 1 second, then redirect
+                                setTimeout(function() {
+                                    console.log('Executing redirect to:', response.verification_url);
+                                    
+                                    // Try multiple redirect methods
+                                    try {
+                                        // Method 1: Direct assignment
+                                        window.location.href = response.verification_url;
+                                        
+                                        // Method 2: Fallback after 500ms
+                                        setTimeout(function() {
+                                            if (window.location.href.indexOf('cfwv_otp_verify') === -1) {
+                                                console.log('Fallback redirect triggered');
+                                                window.location.replace(response.verification_url);
+                                            }
+                                        }, 500);
+                                        
+                                        // Method 3: Final fallback after 1 second
+                                        setTimeout(function() {
+                                            if (window.location.href.indexOf('cfwv_otp_verify') === -1) {
+                                                console.log('Final fallback redirect triggered');
+                                                document.location.href = response.verification_url;
+                                            }
+                                        }, 1000);
+                                        
+                                    } catch (error) {
+                                        console.error('Redirect error:', error);
+                                        // Show manual redirect option
+                                        ContactForm.showOTPSuccess(form, response.message + ' Please click the link below to continue.', response.verification_url);
+                                    }
+                                }, 1000);
+                            } else {
+                                console.error('No verification URL provided in response');
+                                ContactForm.showError(form, 'No verification URL provided. Please contact support.');
+                            }
+                        } else {
+                            ContactForm.showSuccess(form, response.message);
+                            
+                            // Reset form
+                            form[0].reset();
+                            
+                            // Redirect if URL provided
+                            if (response.redirect_url) {
+                                setTimeout(function() {
+                                    window.location.href = response.redirect_url;
+                                }, 2000);
+                            }
                         }
                     } else {
                         ContactForm.showError(form, response.message, response.errors);
@@ -276,6 +325,21 @@ jQuery(document).ready(function($) {
         showSuccess: function(form, message) {
             var messagesDiv = form.find('.cfwv-messages');
             messagesDiv.html('<div class="cfwv-message success">' + message + '</div>');
+            
+            // Scroll to message
+            $('html, body').animate({
+                scrollTop: messagesDiv.offset().top - 50
+            }, 500);
+        },
+        
+        showOTPSuccess: function(form, message, verificationUrl) {
+            var messagesDiv = form.find('.cfwv-messages');
+            var successHtml = '<div class="cfwv-message success">' + message + '</div>';
+            successHtml += '<div class="cfwv-redirect-info">';
+            successHtml += '<p>You will be redirected to the verification page automatically...</p>';
+            successHtml += '<p>If you are not redirected, <a href="' + verificationUrl + '" class="cfwv-manual-redirect">click here to verify your code</a></p>';
+            successHtml += '</div>';
+            messagesDiv.html(successHtml);
             
             // Scroll to message
             $('html, body').animate({

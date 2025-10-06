@@ -29,6 +29,11 @@ class CFWV_Admin {
         add_action('wp_ajax_cfwv_delete_submission', array($this, 'ajax_delete_submission'));
         add_action('wp_ajax_cfwv_export_submissions', array($this, 'ajax_export_submissions'));
         add_action('wp_ajax_cfwv_test_api', array($this, 'ajax_test_api'));
+        add_action('wp_ajax_cfwv_add_wassenger_account', array($this, 'ajax_add_wassenger_account'));
+        add_action('wp_ajax_cfwv_delete_wassenger_account', array($this, 'ajax_delete_wassenger_account'));
+        add_action('wp_ajax_cfwv_get_wassenger_accounts', array($this, 'ajax_get_wassenger_accounts'));
+        add_action('wp_ajax_cfwv_migrate_legacy', array($this, 'ajax_migrate_legacy'));
+        add_action('wp_ajax_cfwv_save_settings', array($this, 'ajax_save_settings'));
     }
     
     private function init_components() {
@@ -415,64 +420,95 @@ class CFWV_Admin {
      * Settings page
      */
     public function settings_page() {
-        if (isset($_POST['submit'])) {
-            check_admin_referer('cfwv_settings', 'cfwv_nonce');
-            
-            $api_token = sanitize_text_field($_POST['wassenger_api_token']);
-            $number_id = sanitize_text_field($_POST['wassenger_number_id']);
-            
-            update_option('cfwv_wassenger_api_token', $api_token);
-            update_option('cfwv_wassenger_number_id', $number_id);
-            
-            echo '<div class="notice notice-success"><p>' . __('Settings saved successfully!', 'contact-form-whatsapp') . '</p></div>';
-        }
-        
-        $api_token = get_option('cfwv_wassenger_api_token', '');
-        $number_id = get_option('cfwv_wassenger_number_id', '');
-        
         ?>
         <div class="wrap">
             <h1><?php _e('Contact Form WhatsApp Settings', 'contact-form-whatsapp'); ?></h1>
             
-            <form method="post">
-                <?php wp_nonce_field('cfwv_settings', 'cfwv_nonce'); ?>
+                <div class="cfwv-settings-info">
+                    <h2><?php _e('General Settings', 'contact-form-whatsapp'); ?></h2>
+                    
+                    <table class="form-table">
+                        <tr>
+                            <th><label for="default_dashboard_url"><?php _e('Default Dashboard URL', 'contact-form-whatsapp'); ?></label></th>
+                            <td>
+                                <input type="url" id="default_dashboard_url" name="default_dashboard_url" 
+                                       value="<?php echo esc_attr(get_option('cfwv_default_dashboard_url', '')); ?>" 
+                                       class="regular-text" placeholder="https://yoursite.com/dashboard">
+                                <p class="description"><?php _e('Default URL to redirect users after successful OTP verification. Can be overridden per form.', 'contact-form-whatsapp'); ?></p>
+                            </td>
+                        </tr>
+                    </table>
+                    
+                    <p class="submit">
+                        <button type="button" id="cfwv-save-settings" class="button button-primary"><?php _e('Save Settings', 'contact-form-whatsapp'); ?></button>
+                    </p>
+                    
+                    <hr>
+                    
+                    <h2><?php _e('Wassenger Configuration', 'contact-form-whatsapp'); ?></h2>
+                    <p><?php _e('Configure your Wassenger accounts below. You can add multiple accounts for better load distribution and failover.', 'contact-form-whatsapp'); ?></p>
                 
-                <table class="form-table">
-                    <tr>
-                        <th scope="row">
-                            <label for="wassenger_api_token"><?php _e('Wassenger API Token', 'contact-form-whatsapp'); ?></label>
-                        </th>
-                        <td>
-                            <input type="text" id="wassenger_api_token" name="wassenger_api_token" value="<?php echo esc_attr($api_token); ?>" class="regular-text" required>
-                            <p class="description">
-                                <?php _e('Enter your Wassenger API token. You can get this from your Wassenger dashboard.', 'contact-form-whatsapp'); ?>
-                                <br>
-                                <a href="https://api.wassenger.com" target="_blank"><?php _e('Get API Token', 'contact-form-whatsapp'); ?></a>
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">
-                            <label for="wassenger_number_id"><?php _e('Wassenger Number ID', 'contact-form-whatsapp'); ?></label>
-                        </th>
-                        <td>
-                            <input type="text" id="wassenger_number_id" name="wassenger_number_id" value="<?php echo esc_attr($number_id); ?>" class="regular-text" required>
-                            <p class="description">
-                                <?php _e('Enter your Wassenger Number ID. This is the device/number identifier from your Wassenger dashboard.', 'contact-form-whatsapp'); ?>
-                                <br>
-                                <a href="https://app.wassenger.com" target="_blank"><?php _e('Get Number ID from Dashboard', 'contact-form-whatsapp'); ?></a>
-                            </p>
-                        </td>
-                    </tr>
-                </table>
-                
-                <p class="submit">
-                    <input type="submit" name="submit" class="button button-primary" value="<?php _e('Save Settings', 'contact-form-whatsapp'); ?>">
+                <div class="cfwv-test-connection">
                     <button type="button" id="cfwv-test-api" class="button"><?php _e('Test API Connection', 'contact-form-whatsapp'); ?></button>
-                </p>
-            </form>
+                    <button type="button" id="cfwv-migrate-legacy" class="button button-secondary"><?php _e('Migrate Legacy Settings', 'contact-form-whatsapp'); ?></button>
+                    <div id="cfwv-api-test-result"></div>
+                </div>
+            </div>
             
-            <div id="cfwv-api-test-result"></div>
+            <hr>
+            
+            <!-- Wassenger Accounts Management -->
+            <div class="cfwv-wassenger-accounts">
+                <h2><?php _e('Wassenger Accounts Management', 'contact-form-whatsapp'); ?></h2>
+                <p><?php _e('Manage multiple Wassenger accounts for better load distribution and failover.', 'contact-form-whatsapp'); ?></p>
+                
+                <div class="cfwv-accounts-section">
+                    <h3><?php _e('Add New Account', 'contact-form-whatsapp'); ?></h3>
+                    <form id="cfwv-add-account-form">
+                        <?php wp_nonce_field('cfwv_nonce', 'nonce'); ?>
+                        <table class="form-table">
+                            <tr>
+                                <th><label for="account_name"><?php _e('Account Name', 'contact-form-whatsapp'); ?></label></th>
+                                <td>
+                                    <input type="text" id="account_name" name="account_name" class="regular-text" required>
+                                    <p class="description"><?php _e('A friendly name for this account', 'contact-form-whatsapp'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><label for="api_token"><?php _e('API Token', 'contact-form-whatsapp'); ?></label></th>
+                                <td>
+                                    <input type="text" id="api_token" name="api_token" class="regular-text" required>
+                                    <p class="description"><?php _e('Wassenger API token for this account', 'contact-form-whatsapp'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><label for="number_id"><?php _e('Number ID', 'contact-form-whatsapp'); ?></label></th>
+                                <td>
+                                    <input type="text" id="number_id" name="number_id" class="regular-text" required>
+                                    <p class="description"><?php _e('Wassenger Number ID for this account', 'contact-form-whatsapp'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><label for="daily_limit"><?php _e('Daily Limit', 'contact-form-whatsapp'); ?></label></th>
+                                <td>
+                                    <input type="number" id="daily_limit" name="daily_limit" value="1000" min="1" class="small-text">
+                                    <p class="description"><?php _e('Maximum messages per day for this account', 'contact-form-whatsapp'); ?></p>
+                                </td>
+                            </tr>
+                        </table>
+                        <p class="submit">
+                            <button type="submit" class="button button-primary"><?php _e('Add Account', 'contact-form-whatsapp'); ?></button>
+                        </p>
+                    </form>
+                </div>
+                
+                <div class="cfwv-accounts-list">
+                    <h3><?php _e('Existing Accounts', 'contact-form-whatsapp'); ?></h3>
+                    <div id="cfwv-accounts-table">
+                        <?php $this->render_wassenger_accounts_table(); ?>
+                    </div>
+                </div>
+            </div>
             
             <hr>
             
@@ -504,17 +540,24 @@ class CFWV_Admin {
             <div class="cfwv-settings-info">
                 <h2><?php _e('How to Use', 'contact-form-whatsapp'); ?></h2>
                 <ol>
-                    <li><?php _e('Configure your Wassenger API token and Number ID above', 'contact-form-whatsapp'); ?></li>
+                    <li><?php _e('Add your Wassenger accounts using the form above', 'contact-form-whatsapp'); ?></li>
                     <li><?php _e('Create a form using the Form Builder', 'contact-form-whatsapp'); ?></li>
                     <li><?php _e('Add the form to your page using the shortcode', 'contact-form-whatsapp'); ?></li>
                     <li><?php _e('View submissions in the Submissions page', 'contact-form-whatsapp'); ?></li>
                 </ol>
                 
-                <h3><?php _e('Wassenger Configuration', 'contact-form-whatsapp'); ?></h3>
-                <p><?php _e('You need both credentials from your Wassenger dashboard:', 'contact-form-whatsapp'); ?></p>
+                <h3><?php _e('Wassenger Account Requirements', 'contact-form-whatsapp'); ?></h3>
+                <p><?php _e('Each Wassenger account needs these credentials from your Wassenger dashboard:', 'contact-form-whatsapp'); ?></p>
                 <ul>
                     <li><strong><?php _e('API Token:', 'contact-form-whatsapp'); ?></strong> <?php _e('Your authentication token for API access', 'contact-form-whatsapp'); ?></li>
                     <li><strong><?php _e('Number ID:', 'contact-form-whatsapp'); ?></strong> <?php _e('The device/number identifier for session sync operations', 'contact-form-whatsapp'); ?></li>
+                </ul>
+                
+                <h3><?php _e('Benefits of Multiple Accounts', 'contact-form-whatsapp'); ?></h3>
+                <ul>
+                    <li><?php _e('Load balancing across multiple accounts', 'contact-form-whatsapp'); ?></li>
+                    <li><?php _e('Automatic failover if one account reaches its limit', 'contact-form-whatsapp'); ?></li>
+                    <li><?php _e('Better reliability and higher message throughput', 'contact-form-whatsapp'); ?></li>
                 </ul>
                 
                 <h3><?php _e('Required Fields', 'contact-form-whatsapp'); ?></h3>
@@ -535,6 +578,53 @@ class CFWV_Admin {
             </div>
         </div>
         <?php
+    }
+    
+    /**
+     * Render Wassenger accounts table
+     */
+    private function render_wassenger_accounts_table() {
+        $accounts = $this->database->get_wassenger_accounts();
+        
+        if (empty($accounts)) {
+            echo '<p><em>' . __('No Wassenger accounts found. Add your first account above.', 'contact-form-whatsapp') . '</em></p>';
+            return;
+        }
+        
+        echo '<table class="wp-list-table widefat fixed striped">';
+        echo '<thead>';
+        echo '<tr>';
+        echo '<th>' . __('Account Name', 'contact-form-whatsapp') . '</th>';
+        echo '<th>' . __('API Token', 'contact-form-whatsapp') . '</th>';
+        echo '<th>' . __('Number ID', 'contact-form-whatsapp') . '</th>';
+        echo '<th>' . __('Daily Usage', 'contact-form-whatsapp') . '</th>';
+        echo '<th>' . __('Status', 'contact-form-whatsapp') . '</th>';
+        echo '<th>' . __('Actions', 'contact-form-whatsapp') . '</th>';
+        echo '</tr>';
+        echo '</thead>';
+        echo '<tbody>';
+        
+        foreach ($accounts as $account) {
+            $usage_percentage = $account->daily_limit > 0 ? round(($account->daily_used / $account->daily_limit) * 100, 1) : 0;
+            $status_class = $account->is_active ? 'active' : 'inactive';
+            $status_text = $account->is_active ? __('Active', 'contact-form-whatsapp') : __('Inactive', 'contact-form-whatsapp');
+            
+            echo '<tr>';
+            echo '<td><strong>' . esc_html($account->account_name) . '</strong></td>';
+            echo '<td>' . esc_html(substr($account->api_token, 0, 20) . '...') . '</td>';
+            echo '<td>' . esc_html($account->number_id) . '</td>';
+            echo '<td>' . $account->daily_used . ' / ' . $account->daily_limit . ' (' . $usage_percentage . '%)</td>';
+            echo '<td><span class="cfwv-status cfwv-status-' . $status_class . '">' . $status_text . '</span></td>';
+            echo '<td>';
+            echo '<button type="button" class="button button-small cfwv-delete-account" data-account-id="' . $account->id . '" data-account-name="' . esc_attr($account->account_name) . '">';
+            echo __('Delete', 'contact-form-whatsapp');
+            echo '</button>';
+            echo '</td>';
+            echo '</tr>';
+        }
+        
+        echo '</tbody>';
+        echo '</table>';
     }
     
     /**
@@ -962,5 +1052,100 @@ class CFWV_Admin {
         delete_option('cfwv_background_logs');
         
         wp_send_json_success(array('message' => __('Logs cleared successfully', 'contact-form-whatsapp')));
+    }
+    
+    public function ajax_add_wassenger_account() {
+        check_ajax_referer('cfwv_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('You do not have permission to perform this action.', 'contact-form-whatsapp'));
+        }
+        
+        $account_name = sanitize_text_field($_POST['account_name']);
+        $api_token = sanitize_text_field($_POST['api_token']);
+        $number_id = sanitize_text_field($_POST['number_id']);
+        $daily_limit = intval($_POST['daily_limit']);
+        
+        if (empty($account_name) || empty($api_token) || empty($number_id)) {
+            wp_send_json_error(__('All fields are required.', 'contact-form-whatsapp'));
+        }
+        
+        $result = $this->database->add_wassenger_account($account_name, $api_token, $number_id, $daily_limit);
+        
+        if ($result) {
+            wp_send_json_success(array('message' => __('Wassenger account added successfully.', 'contact-form-whatsapp')));
+        } else {
+            wp_send_json_error(__('Failed to add Wassenger account.', 'contact-form-whatsapp'));
+        }
+    }
+    
+    public function ajax_delete_wassenger_account() {
+        check_ajax_referer('cfwv_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('You do not have permission to perform this action.', 'contact-form-whatsapp'));
+        }
+        
+        $account_id = intval($_POST['account_id']);
+        
+        if (!$account_id) {
+            wp_send_json_error(__('Invalid account ID.', 'contact-form-whatsapp'));
+        }
+        
+        $wassenger_accounts_table = $this->database->wpdb->prefix . 'cfwv_wassenger_accounts';
+        $result = $this->database->wpdb->delete($wassenger_accounts_table, array('id' => $account_id));
+        
+        if ($result) {
+            wp_send_json_success(array('message' => __('Wassenger account deleted successfully.', 'contact-form-whatsapp')));
+        } else {
+            wp_send_json_error(__('Failed to delete Wassenger account.', 'contact-form-whatsapp'));
+        }
+    }
+    
+    public function ajax_get_wassenger_accounts() {
+        check_ajax_referer('cfwv_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('You do not have permission to perform this action.', 'contact-form-whatsapp'));
+        }
+        
+        // Generate the accounts table HTML
+        ob_start();
+        $this->render_wassenger_accounts_table();
+        $html = ob_get_clean();
+        
+        wp_send_json_success($html);
+    }
+    
+    public function ajax_migrate_legacy() {
+        check_ajax_referer('cfwv_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('You do not have permission to perform this action.', 'contact-form-whatsapp'));
+        }
+        
+        $result = $this->database->migrate_legacy_options();
+        
+        if ($result['success']) {
+            wp_send_json_success(array('message' => $result['message']));
+        } else {
+            wp_send_json_error($result['message']);
+        }
+    }
+    
+    public function ajax_save_settings() {
+        check_ajax_referer('cfwv_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('You do not have permission to perform this action.', 'contact-form-whatsapp'));
+        }
+        
+        $default_dashboard_url = sanitize_url($_POST['default_dashboard_url']);
+        
+        update_option('cfwv_default_dashboard_url', $default_dashboard_url);
+        
+        wp_send_json_success(array(
+            'message' => 'Settings saved successfully!'
+        ));
     }
 } 

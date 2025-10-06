@@ -479,6 +479,43 @@ jQuery(document).ready(function($) {
             setTimeout(function() {
                 notice.fadeOut();
             }, 5000);
+        },
+        
+        migrateLegacy: function(e) {
+            e.preventDefault();
+            
+            var button = $(this);
+            var resultDiv = $('#cfwv-api-test-result');
+            var originalText = button.text();
+            
+            button.prop('disabled', true).text('Migrating...');
+            resultDiv.html('<p>Migrating legacy settings...</p>');
+            
+            $.ajax({
+                url: cfwv_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'cfwv_migrate_legacy',
+                    nonce: cfwv_ajax.nonce
+                },
+                success: function(response) {
+                    var className = response.success ? 'notice-success' : 'notice-error';
+                    resultDiv.html('<div class="notice ' + className + '"><p>' + response.data.message + '</p></div>');
+                    
+                    if (response.success) {
+                        // Reload the accounts table
+                        if (typeof loadAccountsTable === 'function') {
+                            loadAccountsTable();
+                        }
+                    }
+                },
+                error: function() {
+                    resultDiv.html('<div class="notice notice-error"><p>Error migrating legacy settings. Please try again.</p></div>');
+                },
+                complete: function() {
+                    button.prop('disabled', false).text(originalText);
+                }
+            });
         }
     };
     
@@ -590,6 +627,40 @@ jQuery(document).ready(function($) {
         // Bind admin functions for settings and other pages
         $(document).on('click', '#cfwv-test-api', FormBuilder.testAPI);
         $(document).on('click', '#cfwv-initialize-tables', FormBuilder.initializeTables);
+        $(document).on('click', '#cfwv-migrate-legacy', FormBuilder.migrateLegacy);
+        
+        // Save Settings
+        $(document).on('click', '#cfwv-save-settings', function(e) {
+            e.preventDefault();
+            
+            var button = $(this);
+            var originalText = button.text();
+            
+            button.prop('disabled', true).text('Saving...');
+            
+            $.ajax({
+                url: cfwv_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'cfwv_save_settings',
+                    default_dashboard_url: $('#default_dashboard_url').val(),
+                    nonce: cfwv_ajax.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showNotice('Settings saved successfully!', 'success');
+                    } else {
+                        showNotice('Error: ' + response.data, 'error');
+                    }
+                },
+                error: function() {
+                    showNotice('Error saving settings. Please try again.', 'error');
+                },
+                complete: function() {
+                    button.prop('disabled', false).text(originalText);
+                }
+            });
+        });
     }
     
     if ($('.cfwv-submissions').length) {
@@ -773,5 +844,120 @@ jQuery(document).ready(function($) {
             }
         });
     });
+    
+    // Wassenger Accounts Management
+    $(document).on('submit', '#cfwv-add-account-form', function(e) {
+        e.preventDefault();
+        
+        var form = $(this);
+        var formData = form.serialize();
+        var submitButton = form.find('button[type="submit"]');
+        var originalText = submitButton.text();
+        
+        // Prevent multiple submissions
+        if (submitButton.data('submitting')) {
+            return;
+        }
+        
+        submitButton.prop('disabled', true).text('Adding...').data('submitting', true);
+        
+        $.ajax({
+            url: cfwv_ajax.ajax_url,
+            type: 'POST',
+            data: formData + '&action=cfwv_add_wassenger_account&nonce=' + cfwv_ajax.nonce,
+            success: function(response) {
+                if (response.success) {
+                    // Show success message
+                    showNotice('Wassenger account added successfully!', 'success');
+                    
+                    // Clear form
+                    form[0].reset();
+                    
+                    // Reload accounts table
+                    loadAccountsTable();
+                } else {
+                    showNotice('Error: ' + response.data, 'error');
+                }
+            },
+            error: function() {
+                showNotice('Error adding Wassenger account. Please try again.', 'error');
+            },
+            complete: function() {
+                submitButton.prop('disabled', false).text(originalText).data('submitting', false);
+            }
+        });
+    });
+    
+    $(document).on('click', '.cfwv-delete-account', function(e) {
+        e.preventDefault();
+        
+        var accountId = $(this).data('account-id');
+        var accountName = $(this).data('account-name');
+        
+        if (!confirm('Are you sure you want to delete the Wassenger account "' + accountName + '"? This action cannot be undone.')) {
+            return;
+        }
+        
+        var button = $(this);
+        var originalText = button.text();
+        
+        button.prop('disabled', true).text('Deleting...');
+        
+        $.ajax({
+            url: cfwv_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'cfwv_delete_wassenger_account',
+                account_id: accountId,
+                nonce: cfwv_ajax.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotice('Wassenger account deleted successfully!', 'success');
+                    loadAccountsTable();
+                } else {
+                    showNotice('Error: ' + response.data, 'error');
+                }
+            },
+            error: function() {
+                showNotice('Error deleting Wassenger account. Please try again.', 'error');
+            },
+            complete: function() {
+                button.prop('disabled', false).text(originalText);
+            }
+        });
+    });
+    
+    // Function to load accounts table
+    function loadAccountsTable() {
+        $.ajax({
+            url: cfwv_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'cfwv_get_wassenger_accounts',
+                nonce: cfwv_ajax.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#cfwv-accounts-table').html(response.data);
+                }
+            },
+            error: function() {
+                console.error('Error loading accounts table');
+            }
+        });
+    }
+    
+    // Function to show notices
+    function showNotice(message, type) {
+        var noticeClass = type === 'success' ? 'notice-success' : 'notice-error';
+        var notice = $('<div class="notice ' + noticeClass + ' is-dismissible"><p>' + message + '</p></div>');
+        
+        $('.wrap h1').after(notice);
+        
+        setTimeout(function() {
+            notice.fadeOut();
+        }, 5000);
+    }
     
 }); 

@@ -315,6 +315,37 @@
     background-size: 16px;
 }
 
+/* OTP Redirect Info */
+.cfwv-redirect-info {
+    margin-top: 15px;
+    padding: 15px;
+    background: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 6px;
+}
+
+.cfwv-redirect-info p {
+    margin: 0 0 10px 0;
+    color: #0066cc;
+    font-size: 14px;
+}
+
+.cfwv-redirect-info p:last-child {
+    margin-bottom: 0;
+}
+
+.cfwv-manual-redirect {
+    color: #0066cc;
+    text-decoration: underline;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cfwv-manual-redirect:hover {
+    color: #004499;
+    text-decoration: none;
+}
+
 /* File Upload */
 .cfwv-file-upload {
     position: relative;
@@ -484,6 +515,7 @@
 
 .cfwv-field[aria-describedby] {
     /* Ensure proper association with error messages */
+    border-color: #007cba;
 }
 
 /* Screen Reader Only */

@@ -11,22 +11,23 @@ if (!defined('ABSPATH')) {
 class CFWV_WhatsAppValidator {
     
     private $api_url = 'https://api.wassenger.com/v1/numbers/exists';
-    private $api_token;
-    private $numberID;
+    private $database;
     
     public function __construct() {
-        $this->api_token = get_option('cfwv_wassenger_api_token');
-        $this->numberID = get_option('cfwv_wassenger_number_id');
+        $this->database = new CFWV_Database();
     }
     
     /**
      * Validate WhatsApp number
      */
     public function validate_number($phone_number) {
-        if (empty($this->api_token)) {
+        // Get active Wassenger account
+        $account = $this->database->get_active_wassenger_account();
+        
+        if (!$account) {
             return array(
                 'success' => false,
-                'message' => __('WhatsApp API token not configured', 'contact-form-whatsapp'),
+                'message' => __('No active Wassenger account available. Please add a Wassenger account in the admin settings.', 'contact-form-whatsapp'),
                 'valid' => false
             );
         }
@@ -43,7 +44,7 @@ class CFWV_WhatsAppValidator {
         }
         
         // Make API request
-        $response = $this->make_api_request($phone_number);
+        $response = $this->make_api_request($account, $phone_number);
         
         if (is_wp_error($response)) {
             return array(
@@ -99,12 +100,12 @@ class CFWV_WhatsAppValidator {
     /**
      * Make API request to Wassenger
      */
-    private function make_api_request($phone_number) {
+    private function make_api_request($account, $phone_number) {
         $args = array(
             'method' => 'POST',
             'headers' => array(
                 'Content-Type' => 'application/json',
-                'Token' => $this->api_token
+                'Token' => $account->api_token
             ),
             'body' => json_encode(array(
                 'phone' => $phone_number
@@ -138,32 +139,28 @@ class CFWV_WhatsAppValidator {
      * Test API connection using session sync
      */
     public function test_api_connection() {
-        if (empty($this->api_token)) {
-            return array(
-                'success' => false,
-                'message' => __('API token is required', 'contact-form-whatsapp')
-            );
-        }
+        // Get active Wassenger account
+        $account = $this->database->get_active_wassenger_account();
         
-        if (empty($this->numberID)) {
+        if (!$account) {
             return array(
                 'success' => false,
-                'message' => __('Number ID is required', 'contact-form-whatsapp')
+                'message' => __('No active Wassenger account available. Please add a Wassenger account in the admin settings.', 'contact-form-whatsapp')
             );
         }
         
         // Use session sync to test API connection
-        return $this->sync_session_for_wassenger();
+        return $this->sync_session_for_wassenger($account);
     }
 
     //sync session for wassenger
-    public function sync_session_for_wassenger() {
-        $numberId = $this->numberID;
+    public function sync_session_for_wassenger($account) {
+        $numberId = $account->number_id;
         $response = wp_remote_request("https://api.wassenger.com/v1/devices/{$numberId}/sync", array(
             'method' => 'GET',
             'headers' => array(
                 'Content-Type' => 'application/json',
-                'Token' => $this->api_token
+                'Token' => $account->api_token
             ),
             'timeout' => 50000
         ));
