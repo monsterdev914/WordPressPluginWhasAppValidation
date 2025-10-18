@@ -21,6 +21,11 @@ jQuery(document).ready(function ($) {
 
             // Clear errors on input
             $(document).on('input', '.cfwv-field', this.clearFieldError);
+
+            // Mark fields as user-interacted
+            $(document).on('focus input keydown', '.cfwv-field', function () {
+                $(this).data('user-interacted', true);
+            });
         },
 
         initValidation: function () {
@@ -194,8 +199,8 @@ jQuery(document).ready(function ($) {
             errorDiv.text('');
             field.removeClass('error');
 
-            // Check required fields
-            if (isRequired && !fieldValue) {
+            // Check required fields only if user has interacted with the field
+            if (isRequired && !fieldValue && field.data('user-interacted')) {
                 ContactForm.showFieldError(field, 'This field is required');
                 return false;
             }
