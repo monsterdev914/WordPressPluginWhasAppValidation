@@ -1080,6 +1080,7 @@ class CFWV_Admin {
     }
     
     public function ajax_delete_wassenger_account() {
+
         check_ajax_referer('cfwv_nonce', 'nonce');
         
         if (!current_user_can('manage_options')) {
@@ -1092,8 +1093,7 @@ class CFWV_Admin {
             wp_send_json_error(__('Invalid account ID.', 'contact-form-whatsapp'));
         }
         
-        $wassenger_accounts_table = $this->database->wpdb->prefix . 'cfwv_wassenger_accounts';
-        $result = $this->database->wpdb->delete($wassenger_accounts_table, array('id' => $account_id));
+        $result = $this->database->delete_wassenger_account($account_id);
         
         if ($result) {
             wp_send_json_success(array('message' => __('Wassenger account deleted successfully.', 'contact-form-whatsapp')));

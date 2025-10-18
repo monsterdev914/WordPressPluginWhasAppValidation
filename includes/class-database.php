@@ -564,6 +564,13 @@ class CFWV_Database {
     }
     
     /**
+     * Delete Wassenger account
+     */
+    public function delete_wassenger_account($account_id) {
+        $wassenger_accounts_table = $this->wpdb->prefix . 'cfwv_wassenger_accounts';
+        return $this->wpdb->delete($wassenger_accounts_table, array('id' => $account_id));
+    }
+    /**
      * Update submission with OTP data
      */
     public function update_submission_otp($submission_id, $otp_code) {
