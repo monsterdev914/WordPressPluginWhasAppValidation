@@ -138,6 +138,10 @@ class CFWV_Admin {
                                     <span class="cfwv-whatsapp-status <?php echo $submission->whatsapp_validated ? 'valid' : 'invalid'; ?>">
                                         <?php echo $submission->whatsapp_validated ? __('WhatsApp Validated', 'contact-form-whatsapp') : __('WhatsApp Not Validated', 'contact-form-whatsapp'); ?>
                                     </span>
+                                    <br>
+                                    <span class="cfwv-otp-status <?php echo $submission->otp_verified ? 'verified' : 'pending'; ?>">
+                                        <?php echo $submission->otp_verified ? __('OTP Verified', 'contact-form-whatsapp') : __('OTP Pending', 'contact-form-whatsapp'); ?>
+                                    </span>
                                 </li>
                                 <?php endforeach; ?>
                             </ul>
@@ -358,7 +362,8 @@ class CFWV_Admin {
                             <th><?php _e('Name', 'contact-form-whatsapp'); ?></th>
                             <th><?php _e('Email', 'contact-form-whatsapp'); ?></th>
                             <th><?php _e('WhatsApp', 'contact-form-whatsapp'); ?></th>
-                            <th><?php _e('Status', 'contact-form-whatsapp'); ?></th>
+                            <th><?php _e('WhatsApp Status', 'contact-form-whatsapp'); ?></th>
+                            <th><?php _e('OTP Status', 'contact-form-whatsapp'); ?></th>
                             <th><?php _e('Actions', 'contact-form-whatsapp'); ?></th>
                         </tr>
                     </thead>
@@ -373,6 +378,21 @@ class CFWV_Admin {
                             <td>
                                 <span class="cfwv-whatsapp-status <?php echo $submission->whatsapp_validated ? 'valid' : 'invalid'; ?>">
                                     <?php echo $submission->whatsapp_validated ? __('Validated', 'contact-form-whatsapp') : __('Not Validated', 'contact-form-whatsapp'); ?>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="cfwv-otp-status <?php echo $submission->otp_verified ? 'verified' : 'pending'; ?>">
+                                    <?php if ($submission->otp_verified): ?>
+                                        <?php _e('Verified', 'contact-form-whatsapp'); ?>
+                                        <?php if ($submission->otp_verified_at): ?>
+                                            <br><small><?php echo date('Y-m-d H:i', strtotime($submission->otp_verified_at)); ?></small>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <?php _e('Pending', 'contact-form-whatsapp'); ?>
+                                        <?php if ($submission->otp_sent_at): ?>
+                                            <br><small><?php echo date('Y-m-d H:i', strtotime($submission->otp_sent_at)); ?></small>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
                                 </span>
                             </td>
                             <td>
@@ -947,6 +967,22 @@ class CFWV_Admin {
             $html .= '<span class="cfwv-whatsapp-status invalid">' . __('Not Validated', 'contact-form-whatsapp') . '</span>';
         }
         $html .= '</td></tr>';
+        $html .= '<tr><th>' . __('OTP Status', 'contact-form-whatsapp') . '</th><td>';
+        if ($submission->otp_verified) {
+            $html .= '<span class="cfwv-otp-status verified">' . __('Verified', 'contact-form-whatsapp') . '</span>';
+            if ($submission->otp_verified_at) {
+                $html .= '<br><small>' . __('Verified at: ', 'contact-form-whatsapp') . date('Y-m-d H:i:s', strtotime($submission->otp_verified_at)) . '</small>';
+            }
+        } else {
+            $html .= '<span class="cfwv-otp-status pending">' . __('Pending', 'contact-form-whatsapp') . '</span>';
+            if ($submission->otp_sent_at) {
+                $html .= '<br><small>' . __('OTP sent at: ', 'contact-form-whatsapp') . date('Y-m-d H:i:s', strtotime($submission->otp_sent_at)) . '</small>';
+            }
+            if ($submission->otp_attempts > 0) {
+                $html .= '<br><small>' . __('Attempts: ', 'contact-form-whatsapp') . $submission->otp_attempts . '</small>';
+            }
+        }
+        $html .= '</td></tr>';
         $html .= '<tr><th>' . __('IP Address', 'contact-form-whatsapp') . '</th><td>' . esc_html($submission->submission_ip) . '</td></tr>';
         $html .= '<tr><th>' . __('User Agent', 'contact-form-whatsapp') . '</th><td>' . esc_html($submission->user_agent) . '</td></tr>';
         $html .= '</table>';
@@ -995,7 +1031,7 @@ class CFWV_Admin {
         
         // Generate CSV
         $csv_data = array();
-        $headers = array('Date', 'Form', 'WhatsApp Number', 'WhatsApp Validated', 'IP Address');
+        $headers = array('Date', 'Form', 'WhatsApp Number', 'WhatsApp Validated', 'OTP Verified', 'OTP Verified At', 'IP Address');
         
         // Get all possible field names
         $field_names = array();
@@ -1013,6 +1049,8 @@ class CFWV_Admin {
                 $submission->form_name,
                 $submission->whatsapp_number,
                 $submission->whatsapp_validated ? 'Yes' : 'No',
+                $submission->otp_verified ? 'Yes' : 'No',
+                $submission->otp_verified_at ? $submission->otp_verified_at : '',
                 $submission->submission_ip
             );
             
