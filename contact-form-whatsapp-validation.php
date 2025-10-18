@@ -429,8 +429,8 @@ class ContactFormWhatsAppValidation {
         ?>
         <div class="cfwv-otp-verification-container">
             <div class="cfwv-otp-header">
-                <h2>Verify Your Phone Number</h2>
-                <p>We've sent a verification code to <strong><?php echo esc_html($session->phone_number); ?></strong></p>
+                <h2 style="margin-bottom: 10px; font-size: 24px; font-weight: 600; color: #333;">Verify Your Phone Number</h2>
+                <p style="margin-bottom: 20px; font-size: 16px; color: #666;"><?php echo $session->phone_number; ?></p>
             </div>
             
             <form id="cfwv-otp-form" class="cfwv-otp-form">
@@ -438,19 +438,22 @@ class ContactFormWhatsAppValidation {
                 <input type="hidden" name="redirect_url" value="<?php echo esc_attr($atts['redirect_url']); ?>">
                 
                 <div class="cfwv-field-wrapper">
-                    <label for="otp_code">Enter Verification Code</label>
-                    <input type="text" id="otp_code" name="otp_code" class="cfwv-field" 
-                           placeholder="Enter 6-digit code" maxlength="6" required>
-                    <div class="cfwv-field-error"></div>
+                    <div class="cfwv-otp-inputs">
+                        <input type="text" class="cfwv-otp-digit" maxlength="1" data-index="0" required>
+                        <input type="text" class="cfwv-otp-digit" maxlength="1" data-index="1" required>
+                        <input type="text" class="cfwv-otp-digit" maxlength="1" data-index="2" required>
+                        <input type="text" class="cfwv-otp-digit" maxlength="1" data-index="3" required>
+                        <input type="text" class="cfwv-otp-digit" maxlength="1" data-index="4" required>
+                        <input type="text" class="cfwv-otp-digit" maxlength="1" data-index="5" required>
+                    </div>
+                    <div class="cfwv-field-error" style="color: #e74c3c; font-size: 14px; margin-top: 5px; display: block; line-height: 1.4;"></div>
                 </div>
                 
-                <div class="cfwv-submit-wrapper">
-                    <button type="submit" class="cfwv-submit-btn">Verify Code</button>
-                </div>
                 
                 <div class="cfwv-otp-actions">
+                    <!-- Back button to redirect to the previous page -->
+                    <button type="button" id="cfwv-back-btn" class="cfwv-resend-btn">Back</button>
                     <button type="button" id="cfwv-resend-otp" class="cfwv-resend-btn">Resend Code</button>
-                    <span class="cfwv-timer" id="cfwv-timer">Resend available in <span id="countdown">60</span>s</span>
                 </div>
                 
                 <div class="cfwv-loading" style="display: none;">
@@ -464,42 +467,96 @@ class ContactFormWhatsAppValidation {
         <style>
         .cfwv-otp-verification-container {
             max-width: 400px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: 150px auto 0 auto;
+            padding: 40px 20px;
             background: #fff;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        @media (max-width: 768px) {
+            .cfwv-otp-verification-container {
+                max-width: 100%;
+                margin: 100px 20px 0 20px;
+                padding: 40px;
+            }
         }
         
         .cfwv-otp-header {
             text-align: center;
             margin-bottom: 30px;
         }
-        
+
         .cfwv-otp-header h2 {
             margin: 0 0 10px 0;
             color: #333;
         }
         
-        .cfwv-otp-form .cfwv-field {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            font-size: 18px;
-            text-align: center;
-            letter-spacing: 2px;
+        .cfwv-otp-inputs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
         }
         
-        .cfwv-otp-form .cfwv-field:focus {
+        .cfwv-otp-digit {
+            width: 50px;
+            height: 50px;
+            padding: 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 24px;
+            font-weight: 600;
+            text-align: center;
+            color: #333;
+            background: #fff;
+            transition: all 0.3s ease;
+        }
+        
+        .cfwv-otp-digit:focus {
             border-color: #007cba;
             outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.1);
+            transform: scale(1.05);
+        }
+        
+        .cfwv-otp-digit.filled {
+            border-color: #28a745;
+            background-color: #f8fff9;
+        }
+        
+        .cfwv-otp-digit.error {
+            border-color: #e74c3c;
+            background-color: #fff5f5;
+        }
+        
+        .cfwv-otp-digit:disabled {
+            background-color: #f8f9fa;
+            border-color: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        @media (max-width: 480px) {
+            .cfwv-otp-inputs {
+                gap: 8px;
+            }
+            
+            .cfwv-otp-digit {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
         }
         
         .cfwv-otp-actions {
-            text-align: center;
-            margin-top: 20px;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 10px 0 10px;
         }
+        
         
         .cfwv-resend-btn {
             background: none;
@@ -533,14 +590,179 @@ class ContactFormWhatsAppValidation {
                 }
             }, 1000);
             
+            // Initialize input states
+            function initializeInputStates() {
+                $('.cfwv-otp-digit').each(function() {
+                    var index = parseInt($(this).data('index'));
+                    if (index > 0) {
+                        $(this).prop('disabled', true);
+                    }
+                });
+            }
+            
+            // Update input states based on filled inputs
+            function updateInputStates() {
+                $('.cfwv-otp-digit').each(function() {
+                    var $this = $(this);
+                    var index = parseInt($this.data('index'));
+                    
+                    if (index === 0) {
+                        // First input is always enabled
+                        $this.prop('disabled', false);
+                    } else {
+                        // Check if ALL previous inputs are filled
+                        var allPreviousFilled = true;
+                        for (var i = 0; i < index; i++) {
+                            var prevInput = $('.cfwv-otp-digit[data-index="' + i + '"]');
+                            if (prevInput.val() === '') {
+                                allPreviousFilled = false;
+                                break;
+                            }
+                        }
+                        
+                        // Only enable if ALL previous inputs are filled
+                        if (allPreviousFilled) {
+                            $this.prop('disabled', false);
+                        } else {
+                            $this.prop('disabled', true);
+                        }
+                    }
+                });
+            }
+            
+            // Initialize input states on page load
+            initializeInputStates();
+            // Note: Removed auto-focus to prevent unwanted scrolling
+            
+            // OTP input handling
+            $('.cfwv-otp-digit').on('input', function() {
+                var $this = $(this);
+                var value = $this.val();
+                var index = parseInt($this.data('index'));
+                
+                // Only allow numbers
+                if (!/^\d$/.test(value)) {
+                    $this.val('');
+                    return;
+                }
+                
+                // Add filled class
+                $this.addClass('filled');
+                
+                // Update input states
+                updateInputStates();
+                
+                // Auto-focus next input
+                if (value && index < 5) {
+                    $('.cfwv-otp-digit[data-index="' + (index + 1) + '"]').focus();
+                }
+                
+                // Check if all fields are filled
+                checkOTPComplete();
+            });
+            
+            // Handle backspace
+            $('.cfwv-otp-digit').on('keydown', function(e) {
+                var $this = $(this);
+                var index = parseInt($this.data('index'));
+                
+                if (e.key === 'Backspace') {
+                    if (!$this.val() && index > 0) {
+                        // Move to previous input and clear it
+                        var prevInput = $('.cfwv-otp-digit[data-index="' + (index - 1) + '"]');
+                        prevInput.val('').removeClass('filled');
+                        updateInputStates();
+                        prevInput.focus();
+                    } else if ($this.val()) {
+                        // Clear current input and disable subsequent inputs
+                        $this.val('').removeClass('filled');
+                        updateInputStates();
+                    }
+                }
+            });
+            
+            // Handle paste
+            $('.cfwv-otp-digit').on('paste', function(e) {
+                e.preventDefault();
+                var pastedData = (e.originalEvent.clipboardData || window.clipboardData).getData('text');
+                var digits = pastedData.replace(/\D/g, '').substring(0, 6);
+                
+                // Clear all inputs first
+                $('.cfwv-otp-digit').val('').removeClass('filled');
+                
+                // Fill inputs with pasted digits
+                for (var i = 0; i < digits.length; i++) {
+                    $('.cfwv-otp-digit[data-index="' + i + '"]').val(digits[i]).addClass('filled');
+                }
+                
+                // Update input states
+                updateInputStates();
+                
+                if (digits.length === 6) {
+                    $('.cfwv-otp-digit[data-index="5"]').focus();
+                } else if (digits.length > 0) {
+                    $('.cfwv-otp-digit[data-index="' + digits.length + '"]').focus();
+                }
+                
+                checkOTPComplete();
+            });
+            
+            // Check if OTP is complete
+            function checkOTPComplete() {
+                var otpCode = '';
+                var allFilled = true;
+                
+                $('.cfwv-otp-digit').each(function() {
+                    var value = $(this).val();
+                    if (value) {
+                        otpCode += value;
+                    } else {
+                        allFilled = false;
+                    }
+                });
+                
+                if (allFilled && otpCode.length === 6) {
+                    // Auto-submit when all fields are filled
+                    setTimeout(function() {
+                        $('#cfwv-otp-form').submit();
+                    }, 500);
+                }
+            }
+            
+            // Get OTP code from all inputs
+            function getOTPCode() {
+                var otpCode = '';
+                $('.cfwv-otp-digit').each(function() {
+                    otpCode += $(this).val();
+                });
+                return otpCode;
+            }
+            
+            // Clear OTP inputs
+            function clearOTPInputs() {
+                $('.cfwv-otp-digit').val('').removeClass('filled error');
+                updateInputStates();
+                // Note: Removed auto-focus to prevent unwanted scrolling
+            }
+            
             $('#cfwv-otp-form').on('submit', function(e) {
                 e.preventDefault();
                 
                 var form = $(this);
-                var submitBtn = form.find('.cfwv-submit-btn');
                 var loading = form.find('.cfwv-loading');
+                var otpCode = getOTPCode();
                 
-                submitBtn.prop('disabled', true);
+                // Validate OTP length
+                if (otpCode.length !== 6) {
+                    $('.cfwv-field-error').text('Please enter all 6 digits');
+                    $('.cfwv-otp-digit').addClass('error');
+                    return;
+                }
+                
+                // Clear previous errors
+                $('.cfwv-field-error').text('');
+                $('.cfwv-otp-digit').removeClass('error');
+                
                 loading.show();
                 
                 $.ajax({
@@ -549,7 +771,7 @@ class ContactFormWhatsAppValidation {
                     data: {
                         action: 'cfwv_verify_otp',
                         session_token: $('input[name="session_token"]').val(),
-                        otp_code: $('input[name="otp_code"]').val(),
+                        otp_code: otpCode,
                         nonce: cfwv_ajax.nonce
                     },
                     success: function(response) {
@@ -568,14 +790,17 @@ class ContactFormWhatsAppValidation {
                         } else {
                             console.log('OTP verification failed:', response.message); // Debug log
                             $('.cfwv-messages').html('<div class="cfwv-message error">' + response.message + '</div>');
+                            $('.cfwv-otp-digit').addClass('error');
+                            clearOTPInputs();
                         }
                     },
                     error: function(xhr, status, error) {
                         console.error('OTP verification AJAX error:', error); // Debug log
                         $('.cfwv-messages').html('<div class="cfwv-message error">Verification failed. Please try again.</div>');
+                        $('.cfwv-otp-digit').addClass('error');
+                        clearOTPInputs();
                     },
                     complete: function() {
-                        submitBtn.prop('disabled', false);
                         loading.hide();
                     }
                 });
@@ -616,6 +841,9 @@ class ContactFormWhatsAppValidation {
                         $('.cfwv-messages').html('<div class="cfwv-message error">Failed to resend code. Please try again.</div>');
                     }
                 });
+            });
+            $('#cfwv-back-btn').on('click', function() {
+                window.location.href = '<?php echo home_url(); ?>';
             });
         });
         </script>
