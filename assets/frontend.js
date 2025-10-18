@@ -518,7 +518,6 @@ jQuery(document).ready(function ($) {
     FileUpload.init();
 
     // Auto-focus first field
-    $('.cfwv-form:first .cfwv-field:first').focus();
 
     // Prevent double submission
     $(document).on('submit', '.cfwv-form', function () {
