@@ -12,9 +12,9 @@ jQuery(document).ready(function ($) {
             // Form submission
             $(document).on('submit', '.cfwv-form', this.submitForm);
 
-            // WhatsApp validation
-            $(document).on('blur', '.cfwv-whatsapp-field', this.validateWhatsApp);
-            $(document).on('input', '.cfwv-whatsapp-field', this.delayedWhatsAppValidation);
+            // WhatsApp validation removed
+
+            // Country code selection (removed - users don't see country code selector)
 
             // Real-time validation
             $(document).on('blur', '.cfwv-field', this.validateField);
@@ -22,9 +22,23 @@ jQuery(document).ready(function ($) {
             // Clear errors on input
             $(document).on('input', '.cfwv-field', this.clearFieldError);
 
+            // File upload handling
+            $(document).on('change', '.cfwv-file', this.handleFileUpload);
+            $(document).on('click', '.cfwv-file', function () {
+                console.log('File input clicked');
+            });
+            $(document).on('click', '.file-remove', this.removeFile);
+
             // Mark fields as user-interacted
             $(document).on('focus input keydown', '.cfwv-field', function () {
-                $(this).data('user-interacted', true);
+                var field = $(this);
+                field.data('user-interacted', true);
+
+                // Clear the user-interacted flag after 2 seconds of inactivity
+                clearTimeout(field.data('interaction-timeout'));
+                field.data('interaction-timeout', setTimeout(function () {
+                    field.data('user-interacted', false);
+                }, 2000));
             });
         },
 
@@ -38,10 +52,17 @@ jQuery(document).ready(function ($) {
             var form = $(this);
             var formData = ContactForm.getFormData(form);
 
+            console.log('Form submission started', formData);
+            console.log('Form ID from data attribute:', form.data('form-id'));
+            console.log('Form ID from FormData:', formData.get('form_id'));
+
             // Validate form
             if (!ContactForm.validateForm(form)) {
+                console.log('Form validation failed');
                 return false;
             }
+
+            console.log('Form validation passed, proceeding with submission');
 
             // Show loading state
             ContactForm.showLoading(form);
@@ -54,39 +75,37 @@ jQuery(document).ready(function ($) {
             $.ajax({
                 url: cfwv_ajax.ajax_url,
                 type: 'POST',
-                data: {
-                    action: 'cfwv_submit_form',
-                    form_data: formData,
-                    nonce: cfwv_ajax.nonce
-                },
+                data: formData,
+                processData: false,
+                contentType: false,
                 success: function (response) {
                     console.log('Form submission response:', response); // Debug log
 
                     if (response.success) {
-                        if (response.otp_verification) {
+                        if (response.data.otp_verification) {
                             console.log('OTP verification required, redirecting to:', response.verification_url); // Debug log
 
                             // Show OTP verification message with manual redirect option
-                            ContactForm.showOTPSuccess(form, response.message, response.verification_url);
+                            ContactForm.showOTPSuccess(form, response.data.message, response.data.verification_url);
 
                             // Redirect to OTP verification page with a short delay to ensure message is shown
                             console.log('Redirecting to verification page...'); // Debug log
 
-                            if (response.verification_url) {
+                            if (response.data.verification_url) {
                                 // Show message for 1 second, then redirect
                                 setTimeout(function () {
-                                    console.log('Executing redirect to:', response.verification_url);
+                                    console.log('Executing redirect to:', response.data.verification_url);
 
                                     // Try multiple redirect methods
                                     try {
                                         // Method 1: Direct assignment
-                                        window.location.href = response.verification_url;
+                                        window.location.href = response.data.verification_url;
 
                                         // Method 2: Fallback after 500ms
                                         setTimeout(function () {
                                             if (window.location.href.indexOf('cfwv_otp_verify') === -1) {
                                                 console.log('Fallback redirect triggered');
-                                                window.location.replace(response.verification_url);
+                                                window.location.replace(response.data.verification_url);
                                             }
                                         }, 500);
 
@@ -94,14 +113,14 @@ jQuery(document).ready(function ($) {
                                         setTimeout(function () {
                                             if (window.location.href.indexOf('cfwv_otp_verify') === -1) {
                                                 console.log('Final fallback redirect triggered');
-                                                document.location.href = response.verification_url;
+                                                document.location.href = response.data.verification_url;
                                             }
                                         }, 1000);
 
                                     } catch (error) {
                                         console.error('Redirect error:', error);
                                         // Show manual redirect option
-                                        ContactForm.showOTPSuccess(form, response.message + ' Please click the link below to continue.', response.verification_url);
+                                        ContactForm.showOTPSuccess(form, response.data.message + ' Please click the link below to continue.', response.verification_url);
                                     }
                                 }, 1000);
                             } else {
@@ -109,20 +128,27 @@ jQuery(document).ready(function ($) {
                                 ContactForm.showError(form, 'No verification URL provided. Please contact support.');
                             }
                         } else {
-                            ContactForm.showSuccess(form, response.message);
+                            ContactForm.showSuccess(form, response.data.message);
 
                             // Reset form
                             form[0].reset();
 
                             // Redirect if URL provided
-                            if (response.redirect_url) {
+                            if (response.data.redirect_url) {
                                 setTimeout(function () {
-                                    window.location.href = response.redirect_url;
+                                    window.location.href = response.data.redirect_url;
                                 }, 2000);
                             }
                         }
                     } else {
-                        ContactForm.showError(form, response.message, response.errors);
+                        var errorMessage = 'An error occurred';
+                        if (response.data) {
+                            errorMessage = response.data;
+                        } else if (response.message) {
+                            errorMessage = response.message;
+                        }
+                        console.error('Form submission failed:', errorMessage);
+                        ContactForm.showError(form, errorMessage, response.data ? response.data.errors : null);
                     }
                 },
                 error: function (xhr, status, error) {
@@ -135,57 +161,10 @@ jQuery(document).ready(function ($) {
             });
         },
 
-        validateWhatsApp: function () {
-            var field = $(this);
-            var phoneNumber = field.val();
-            var validationDiv = field.siblings('.cfwv-whatsapp-validation');
+        // validateWhatsApp method removed
 
-            if (!phoneNumber) {
-                validationDiv.removeClass('valid invalid').text('');
-                return;
-            }
+        // delayedWhatsAppValidation method removed
 
-            // Show validating state
-            validationDiv.removeClass('valid invalid').text('Validating...');
-
-            $.ajax({
-                url: cfwv_ajax.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'cfwv_validate_whatsapp',
-                    phone: phoneNumber,
-                    nonce: cfwv_ajax.nonce
-                },
-                success: function (response) {
-                    if (response.success) {
-                        if (response.valid) {
-                            validationDiv.addClass('valid').removeClass('invalid').text('✓ Valid WhatsApp number');
-                            field.removeClass('error').addClass('valid');
-                        } else {
-                            validationDiv.addClass('invalid').removeClass('valid').text('✗ Not a valid WhatsApp number');
-                            field.removeClass('valid').addClass('error');
-                        }
-                    } else {
-                        validationDiv.addClass('invalid').removeClass('valid').text('✗ ' + response.message);
-                        field.removeClass('valid').addClass('error');
-                    }
-                },
-                error: function () {
-                    validationDiv.addClass('invalid').removeClass('valid').text('✗ Validation failed');
-                    field.removeClass('valid').addClass('error');
-                }
-            });
-        },
-
-        delayedWhatsAppValidation: function () {
-            var field = $(this);
-
-            clearTimeout(field.data('validation-timeout'));
-
-            field.data('validation-timeout', setTimeout(function () {
-                ContactForm.validateWhatsApp.call(field);
-            }, 1000));
-        },
 
         validateField: function () {
             var field = $(this);
@@ -234,13 +213,7 @@ jQuery(document).ready(function ($) {
                     break;
             }
 
-            // WhatsApp field validation
-            if (field.hasClass('cfwv-whatsapp-field')) {
-                if (!ContactForm.isValidPhone(fieldValue)) {
-                    ContactForm.showFieldError(field, 'Please enter a valid WhatsApp number');
-                    return false;
-                }
-            }
+            // WhatsApp field validation removed
 
             // Length validation
             if (fieldValue.length > 5000) {
@@ -255,9 +228,13 @@ jQuery(document).ready(function ($) {
             var isValid = true;
             var firstErrorField = null;
 
+            console.log('Starting form validation');
+
             // Validate all fields
             form.find('.cfwv-field').each(function () {
-                if (!ContactForm.validateField.call(this)) {
+                var fieldValid = ContactForm.validateField.call(this);
+                console.log('Field validation result:', $(this).attr('name'), fieldValid);
+                if (!fieldValid) {
                     isValid = false;
                     if (!firstErrorField) {
                         firstErrorField = $(this);
@@ -265,18 +242,7 @@ jQuery(document).ready(function ($) {
                 }
             });
 
-            // Check WhatsApp validation specifically
-            var whatsappField = form.find('.cfwv-whatsapp-field');
-            if (whatsappField.length) {
-                var validationDiv = whatsappField.siblings('.cfwv-whatsapp-validation');
-                if (!validationDiv.hasClass('valid') && whatsappField.val()) {
-                    ContactForm.showFieldError(whatsappField, 'Please wait for WhatsApp validation to complete');
-                    isValid = false;
-                    if (!firstErrorField) {
-                        firstErrorField = whatsappField;
-                    }
-                }
-            }
+            // WhatsApp validation removed - no longer blocking form submission
 
             // Focus on first error field
             if (firstErrorField) {
@@ -287,7 +253,7 @@ jQuery(document).ready(function ($) {
         },
 
         getFormData: function (form) {
-            var formData = {};
+            var formData = new FormData();
 
             form.find('.cfwv-field').each(function () {
                 var field = $(this);
@@ -295,28 +261,169 @@ jQuery(document).ready(function ($) {
                 var value = field.val();
 
                 if (name) {
-                    formData[name] = value;
+                    // Handle file uploads
+                    if (field.hasClass('cfwv-file')) {
+                        var file = field[0].files[0];
+                        if (file) {
+                            formData.append(name, file);
+                        }
+                    }
+                    // Handle WhatsApp fields specially to combine country code
+                    else if (field.hasClass('cfwv-whatsapp-field')) {
+                        var countryCode = field.attr('data-country-code') || '+1';
+                        var phoneNumber = value;
+
+                        // If phone number doesn't start with +, prepend country code
+                        if (phoneNumber && !phoneNumber.startsWith('+')) {
+                            // Remove any leading zeros or special characters
+                            phoneNumber = phoneNumber.replace(/^[0\s\-\(\)]+/, '');
+                            value = countryCode + phoneNumber;
+                        }
+                        formData.append(name, value);
+                    }
+                    // Handle other fields
+                    else {
+                        formData.append(name, value);
+                    }
                 }
             });
 
-            // Add form ID
-            formData.form_id = form.data('form-id');
-            formData.nonce = cfwv_ajax.nonce;
+            // Add form ID, nonce, and action
+            formData.append('form_id', form.data('form-id'));
+            formData.append('nonce', form.find('input[name="nonce"]').val());
+            formData.append('action', 'cfwv_submit_form');
 
             return formData;
         },
 
         showFieldError: function (field, message) {
-            var errorDiv = field.siblings('.cfwv-field-error');
+            var errorDiv;
+
+            // For file inputs, place error after the upload wrapper
+            if (field.hasClass('cfwv-file')) {
+                var uploadWrapper = field.closest('.cfwv-file-upload-wrapper');
+                errorDiv = uploadWrapper.siblings('.cfwv-field-error');
+                if (errorDiv.length === 0) {
+                    errorDiv = $('<div class="cfwv-field-error"></div>');
+                    uploadWrapper.after(errorDiv);
+                }
+                field.siblings('.cfwv-file-label').addClass('error');
+            } else {
+                errorDiv = field.siblings('.cfwv-field-error');
+                field.addClass('error');
+            }
+
             errorDiv.text(message);
-            field.addClass('error');
         },
 
         clearFieldError: function () {
             var field = $(this);
-            var errorDiv = field.siblings('.cfwv-field-error');
+            var errorDiv;
+
+            // For file inputs, find error after the upload wrapper
+            if (field.hasClass('cfwv-file')) {
+                var uploadWrapper = field.closest('.cfwv-file-upload-wrapper');
+                errorDiv = uploadWrapper.siblings('.cfwv-field-error');
+                field.siblings('.cfwv-file-label').removeClass('error');
+            } else {
+                errorDiv = field.siblings('.cfwv-field-error');
+                field.removeClass('error');
+            }
+
             errorDiv.text('');
-            field.removeClass('error');
+        },
+
+        handleFileUpload: function () {
+            console.log('File upload triggered');
+            var field = $(this);
+            var file = field[0].files[0];
+            var fieldWrapper = field.closest('.cfwv-field-wrapper') || field.parent();
+            var fileText = fieldWrapper.find('.cfwv-file-text');
+
+            console.log('File selected:', file);
+
+            // Clear any existing errors
+            ContactForm.clearFieldError.call(field);
+
+            // Remove existing preview
+            fieldWrapper.find('.cfwv-file-preview').remove();
+
+            if (file) {
+                // Update the file text
+                fileText.text(file.name);
+
+                // Validate file
+                var validation = ContactForm.validateFile(file);
+                if (!validation.valid) {
+                    ContactForm.showFieldError(field, validation.message);
+                    field.val(''); // Clear the file input
+                    fileText.text('No file chosen');
+                    return;
+                }
+
+                // Show file preview
+                ContactForm.showFilePreview(field, file);
+            } else {
+                // Reset text if no file selected
+                fileText.text('No file chosen');
+            }
+        },
+
+        validateFile: function (file) {
+            var maxSize = 5 * 1024 * 1024; // 5MB
+            var allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            var allowedExtensions = ['.pdf', '.doc', '.docx'];
+
+            // Check file size
+            if (file.size > maxSize) {
+                return {
+                    valid: false,
+                    message: 'File size must be less than 5MB'
+                };
+            }
+
+            // Check file type
+            if (!allowedTypes.includes(file.type) && !allowedExtensions.some(ext => file.name.toLowerCase().endsWith(ext))) {
+                return {
+                    valid: false,
+                    message: 'Only PDF, DOC, and DOCX files are allowed'
+                };
+            }
+
+            return { valid: true };
+        },
+
+        showFilePreview: function (field, file) {
+            var fieldWrapper = field.closest('.cfwv-field-wrapper') || field.parent();
+            var fileSize = ContactForm.formatFileSize(file.size);
+
+            var preview = $('<div class="cfwv-file-preview">' +
+                '<span class="file-name">' + file.name + '</span> ' +
+                '<span class="file-size">(' + fileSize + ')</span> ' +
+                '<a href="#" class="file-remove">Remove</a>' +
+                '</div>');
+
+            fieldWrapper.append(preview);
+        },
+
+        removeFile: function (e) {
+            e.preventDefault();
+            var field = $(this).closest('.cfwv-field-wrapper').find('.cfwv-file') ||
+                $(this).closest('.cfwv-form').find('.cfwv-file');
+            var fieldWrapper = field.closest('.cfwv-field-wrapper');
+            var fileText = fieldWrapper.find('.cfwv-file-text');
+
+            field.val('');
+            fileText.text('No file chosen');
+            $(this).closest('.cfwv-file-preview').remove();
+        },
+
+        formatFileSize: function (bytes) {
+            if (bytes === 0) return '0 Bytes';
+            var k = 1024;
+            var sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            var i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         },
 
         showLoading: function (form) {

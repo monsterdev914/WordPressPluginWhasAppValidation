@@ -97,6 +97,253 @@ class CFWV_FormBuilder {
     }
     
     /**
+     * Get country codes for WhatsApp fields
+     */
+    private function get_country_codes() {
+        return array(
+            '+1' => array('name' => 'United States', 'code' => 'US'),
+            '+1' => array('name' => 'Canada', 'code' => 'CA'),
+            '+44' => array('name' => 'United Kingdom', 'code' => 'GB'),
+            '+33' => array('name' => 'France', 'code' => 'FR'),
+            '+49' => array('name' => 'Germany', 'code' => 'DE'),
+            '+39' => array('name' => 'Italy', 'code' => 'IT'),
+            '+34' => array('name' => 'Spain', 'code' => 'ES'),
+            '+31' => array('name' => 'Netherlands', 'code' => 'NL'),
+            '+32' => array('name' => 'Belgium', 'code' => 'BE'),
+            '+41' => array('name' => 'Switzerland', 'code' => 'CH'),
+            '+43' => array('name' => 'Austria', 'code' => 'AT'),
+            '+45' => array('name' => 'Denmark', 'code' => 'DK'),
+            '+46' => array('name' => 'Sweden', 'code' => 'SE'),
+            '+47' => array('name' => 'Norway', 'code' => 'NO'),
+            '+358' => array('name' => 'Finland', 'code' => 'FI'),
+            '+48' => array('name' => 'Poland', 'code' => 'PL'),
+            '+420' => array('name' => 'Czech Republic', 'code' => 'CZ'),
+            '+36' => array('name' => 'Hungary', 'code' => 'HU'),
+            '+40' => array('name' => 'Romania', 'code' => 'RO'),
+            '+359' => array('name' => 'Bulgaria', 'code' => 'BG'),
+            '+385' => array('name' => 'Croatia', 'code' => 'HR'),
+            '+386' => array('name' => 'Slovenia', 'code' => 'SI'),
+            '+421' => array('name' => 'Slovakia', 'code' => 'SK'),
+            '+370' => array('name' => 'Lithuania', 'code' => 'LT'),
+            '+371' => array('name' => 'Latvia', 'code' => 'LV'),
+            '+372' => array('name' => 'Estonia', 'code' => 'EE'),
+            '+353' => array('name' => 'Ireland', 'code' => 'IE'),
+            '+351' => array('name' => 'Portugal', 'code' => 'PT'),
+            '+30' => array('name' => 'Greece', 'code' => 'GR'),
+            '+357' => array('name' => 'Cyprus', 'code' => 'CY'),
+            '+356' => array('name' => 'Malta', 'code' => 'MT'),
+            '+352' => array('name' => 'Luxembourg', 'code' => 'LU'),
+            '+377' => array('name' => 'Monaco', 'code' => 'MC'),
+            '+378' => array('name' => 'San Marino', 'code' => 'SM'),
+            '+39' => array('name' => 'Vatican City', 'code' => 'VA'),
+            '+376' => array('name' => 'Andorra', 'code' => 'AD'),
+            '+423' => array('name' => 'Liechtenstein', 'code' => 'LI'),
+            '+7' => array('name' => 'Russia', 'code' => 'RU'),
+            '+380' => array('name' => 'Ukraine', 'code' => 'UA'),
+            '+375' => array('name' => 'Belarus', 'code' => 'BY'),
+            '+81' => array('name' => 'Japan', 'code' => 'JP'),
+            '+82' => array('name' => 'South Korea', 'code' => 'KR'),
+            '+86' => array('name' => 'China', 'code' => 'CN'),
+            '+852' => array('name' => 'Hong Kong', 'code' => 'HK'),
+            '+853' => array('name' => 'Macau', 'code' => 'MO'),
+            '+886' => array('name' => 'Taiwan', 'code' => 'TW'),
+            '+65' => array('name' => 'Singapore', 'code' => 'SG'),
+            '+60' => array('name' => 'Malaysia', 'code' => 'MY'),
+            '+66' => array('name' => 'Thailand', 'code' => 'TH'),
+            '+84' => array('name' => 'Vietnam', 'code' => 'VN'),
+            '+855' => array('name' => 'Cambodia', 'code' => 'KH'),
+            '+856' => array('name' => 'Laos', 'code' => 'LA'),
+            '+95' => array('name' => 'Myanmar', 'code' => 'MM'),
+            '+63' => array('name' => 'Philippines', 'code' => 'PH'),
+            '+62' => array('name' => 'Indonesia', 'code' => 'ID'),
+            '+673' => array('name' => 'Brunei', 'code' => 'BN'),
+            '+91' => array('name' => 'India', 'code' => 'IN'),
+            '+92' => array('name' => 'Pakistan', 'code' => 'PK'),
+            '+880' => array('name' => 'Bangladesh', 'code' => 'BD'),
+            '+94' => array('name' => 'Sri Lanka', 'code' => 'LK'),
+            '+977' => array('name' => 'Nepal', 'code' => 'NP'),
+            '+975' => array('name' => 'Bhutan', 'code' => 'BT'),
+            '+960' => array('name' => 'Maldives', 'code' => 'MV'),
+            '+93' => array('name' => 'Afghanistan', 'code' => 'AF'),
+            '+98' => array('name' => 'Iran', 'code' => 'IR'),
+            '+964' => array('name' => 'Iraq', 'code' => 'IQ'),
+            '+90' => array('name' => 'Turkey', 'code' => 'TR'),
+            '+90' => array('name' => 'Northern Cyprus', 'code' => 'TR'),
+            '+961' => array('name' => 'Lebanon', 'code' => 'LB'),
+            '+963' => array('name' => 'Syria', 'code' => 'SY'),
+            '+972' => array('name' => 'Israel', 'code' => 'IL'),
+            '+970' => array('name' => 'Palestine', 'code' => 'PS'),
+            '+962' => array('name' => 'Jordan', 'code' => 'JO'),
+            '+966' => array('name' => 'Saudi Arabia', 'code' => 'SA'),
+            '+965' => array('name' => 'Kuwait', 'code' => 'KW'),
+            '+973' => array('name' => 'Bahrain', 'code' => 'BH'),
+            '+974' => array('name' => 'Qatar', 'code' => 'QA'),
+            '+971' => array('name' => 'United Arab Emirates', 'code' => 'AE'),
+            '+968' => array('name' => 'Oman', 'code' => 'OM'),
+            '+967' => array('name' => 'Yemen', 'code' => 'YE'),
+            '+20' => array('name' => 'Egypt', 'code' => 'EG'),
+            '+218' => array('name' => 'Libya', 'code' => 'LY'),
+            '+216' => array('name' => 'Tunisia', 'code' => 'TN'),
+            '+213' => array('name' => 'Algeria', 'code' => 'DZ'),
+            '+212' => array('name' => 'Morocco', 'code' => 'MA'),
+            '+222' => array('name' => 'Mauritania', 'code' => 'MR'),
+            '+220' => array('name' => 'Gambia', 'code' => 'GM'),
+            '+221' => array('name' => 'Senegal', 'code' => 'SN'),
+            '+223' => array('name' => 'Mali', 'code' => 'ML'),
+            '+224' => array('name' => 'Guinea', 'code' => 'GN'),
+            '+225' => array('name' => 'Ivory Coast', 'code' => 'CI'),
+            '+226' => array('name' => 'Burkina Faso', 'code' => 'BF'),
+            '+227' => array('name' => 'Niger', 'code' => 'NE'),
+            '+228' => array('name' => 'Togo', 'code' => 'TG'),
+            '+229' => array('name' => 'Benin', 'code' => 'BJ'),
+            '+230' => array('name' => 'Mauritius', 'code' => 'MU'),
+            '+231' => array('name' => 'Liberia', 'code' => 'LR'),
+            '+232' => array('name' => 'Sierra Leone', 'code' => 'SL'),
+            '+233' => array('name' => 'Ghana', 'code' => 'GH'),
+            '+234' => array('name' => 'Nigeria', 'code' => 'NG'),
+            '+235' => array('name' => 'Chad', 'code' => 'TD'),
+            '+236' => array('name' => 'Central African Republic', 'code' => 'CF'),
+            '+237' => array('name' => 'Cameroon', 'code' => 'CM'),
+            '+238' => array('name' => 'Cape Verde', 'code' => 'CV'),
+            '+239' => array('name' => 'São Tomé and Príncipe', 'code' => 'ST'),
+            '+240' => array('name' => 'Equatorial Guinea', 'code' => 'GQ'),
+            '+241' => array('name' => 'Gabon', 'code' => 'GA'),
+            '+242' => array('name' => 'Republic of the Congo', 'code' => 'CG'),
+            '+243' => array('name' => 'Democratic Republic of the Congo', 'code' => 'CD'),
+            '+244' => array('name' => 'Angola', 'code' => 'AO'),
+            '+245' => array('name' => 'Guinea-Bissau', 'code' => 'GW'),
+            '+246' => array('name' => 'British Indian Ocean Territory', 'code' => 'IO'),
+            '+248' => array('name' => 'Seychelles', 'code' => 'SC'),
+            '+249' => array('name' => 'Sudan', 'code' => 'SD'),
+            '+250' => array('name' => 'Rwanda', 'code' => 'RW'),
+            '+251' => array('name' => 'Ethiopia', 'code' => 'ET'),
+            '+252' => array('name' => 'Somalia', 'code' => 'SO'),
+            '+253' => array('name' => 'Djibouti', 'code' => 'DJ'),
+            '+254' => array('name' => 'Kenya', 'code' => 'KE'),
+            '+255' => array('name' => 'Tanzania', 'code' => 'TZ'),
+            '+256' => array('name' => 'Uganda', 'code' => 'UG'),
+            '+257' => array('name' => 'Burundi', 'code' => 'BI'),
+            '+258' => array('name' => 'Mozambique', 'code' => 'MZ'),
+            '+260' => array('name' => 'Zambia', 'code' => 'ZM'),
+            '+261' => array('name' => 'Madagascar', 'code' => 'MG'),
+            '+262' => array('name' => 'Réunion', 'code' => 'RE'),
+            '+263' => array('name' => 'Zimbabwe', 'code' => 'ZW'),
+            '+264' => array('name' => 'Namibia', 'code' => 'NA'),
+            '+265' => array('name' => 'Malawi', 'code' => 'MW'),
+            '+266' => array('name' => 'Lesotho', 'code' => 'LS'),
+            '+267' => array('name' => 'Botswana', 'code' => 'BW'),
+            '+268' => array('name' => 'Swaziland', 'code' => 'SZ'),
+            '+269' => array('name' => 'Comoros', 'code' => 'KM'),
+            '+290' => array('name' => 'Saint Helena', 'code' => 'SH'),
+            '+291' => array('name' => 'Eritrea', 'code' => 'ER'),
+            '+297' => array('name' => 'Aruba', 'code' => 'AW'),
+            '+298' => array('name' => 'Faroe Islands', 'code' => 'FO'),
+            '+299' => array('name' => 'Greenland', 'code' => 'GL'),
+            '+350' => array('name' => 'Gibraltar', 'code' => 'GI'),
+            '+351' => array('name' => 'Portugal', 'code' => 'PT'),
+            '+352' => array('name' => 'Luxembourg', 'code' => 'LU'),
+            '+354' => array('name' => 'Iceland', 'code' => 'IS'),
+            '+355' => array('name' => 'Albania', 'code' => 'AL'),
+            '+356' => array('name' => 'Malta', 'code' => 'MT'),
+            '+357' => array('name' => 'Cyprus', 'code' => 'CY'),
+            '+358' => array('name' => 'Finland', 'code' => 'FI'),
+            '+359' => array('name' => 'Bulgaria', 'code' => 'BG'),
+            '+370' => array('name' => 'Lithuania', 'code' => 'LT'),
+            '+371' => array('name' => 'Latvia', 'code' => 'LV'),
+            '+372' => array('name' => 'Estonia', 'code' => 'EE'),
+            '+373' => array('name' => 'Moldova', 'code' => 'MD'),
+            '+374' => array('name' => 'Armenia', 'code' => 'AM'),
+            '+375' => array('name' => 'Belarus', 'code' => 'BY'),
+            '+376' => array('name' => 'Andorra', 'code' => 'AD'),
+            '+377' => array('name' => 'Monaco', 'code' => 'MC'),
+            '+378' => array('name' => 'San Marino', 'code' => 'SM'),
+            '+380' => array('name' => 'Ukraine', 'code' => 'UA'),
+            '+381' => array('name' => 'Serbia', 'code' => 'RS'),
+            '+382' => array('name' => 'Montenegro', 'code' => 'ME'),
+            '+383' => array('name' => 'Kosovo', 'code' => 'XK'),
+            '+385' => array('name' => 'Croatia', 'code' => 'HR'),
+            '+386' => array('name' => 'Slovenia', 'code' => 'SI'),
+            '+387' => array('name' => 'Bosnia and Herzegovina', 'code' => 'BA'),
+            '+389' => array('name' => 'North Macedonia', 'code' => 'MK'),
+            '+420' => array('name' => 'Czech Republic', 'code' => 'CZ'),
+            '+421' => array('name' => 'Slovakia', 'code' => 'SK'),
+            '+423' => array('name' => 'Liechtenstein', 'code' => 'LI'),
+            '+500' => array('name' => 'Falkland Islands', 'code' => 'FK'),
+            '+501' => array('name' => 'Belize', 'code' => 'BZ'),
+            '+502' => array('name' => 'Guatemala', 'code' => 'GT'),
+            '+503' => array('name' => 'El Salvador', 'code' => 'SV'),
+            '+504' => array('name' => 'Honduras', 'code' => 'HN'),
+            '+505' => array('name' => 'Nicaragua', 'code' => 'NI'),
+            '+506' => array('name' => 'Costa Rica', 'code' => 'CR'),
+            '+507' => array('name' => 'Panama', 'code' => 'PA'),
+            '+508' => array('name' => 'Saint Pierre and Miquelon', 'code' => 'PM'),
+            '+509' => array('name' => 'Haiti', 'code' => 'HT'),
+            '+590' => array('name' => 'Guadeloupe', 'code' => 'GP'),
+            '+591' => array('name' => 'Bolivia', 'code' => 'BO'),
+            '+592' => array('name' => 'Guyana', 'code' => 'GY'),
+            '+593' => array('name' => 'Ecuador', 'code' => 'EC'),
+            '+594' => array('name' => 'French Guiana', 'code' => 'GF'),
+            '+595' => array('name' => 'Paraguay', 'code' => 'PY'),
+            '+596' => array('name' => 'Martinique', 'code' => 'MQ'),
+            '+597' => array('name' => 'Suriname', 'code' => 'SR'),
+            '+598' => array('name' => 'Uruguay', 'code' => 'UY'),
+            '+599' => array('name' => 'Netherlands Antilles', 'code' => 'AN'),
+            '+670' => array('name' => 'East Timor', 'code' => 'TL'),
+            '+672' => array('name' => 'Antarctica', 'code' => 'AQ'),
+            '+673' => array('name' => 'Brunei', 'code' => 'BN'),
+            '+674' => array('name' => 'Nauru', 'code' => 'NR'),
+            '+675' => array('name' => 'Papua New Guinea', 'code' => 'PG'),
+            '+676' => array('name' => 'Tonga', 'code' => 'TO'),
+            '+677' => array('name' => 'Solomon Islands', 'code' => 'SB'),
+            '+678' => array('name' => 'Vanuatu', 'code' => 'VU'),
+            '+679' => array('name' => 'Fiji', 'code' => 'FJ'),
+            '+680' => array('name' => 'Palau', 'code' => 'PW'),
+            '+681' => array('name' => 'Wallis and Futuna', 'code' => 'WF'),
+            '+682' => array('name' => 'Cook Islands', 'code' => 'CK'),
+            '+683' => array('name' => 'Niue', 'code' => 'NU'),
+            '+684' => array('name' => 'American Samoa', 'code' => 'AS'),
+            '+685' => array('name' => 'Samoa', 'code' => 'WS'),
+            '+686' => array('name' => 'Kiribati', 'code' => 'KI'),
+            '+687' => array('name' => 'New Caledonia', 'code' => 'NC'),
+            '+688' => array('name' => 'Tuvalu', 'code' => 'TV'),
+            '+689' => array('name' => 'French Polynesia', 'code' => 'PF'),
+            '+690' => array('name' => 'Tokelau', 'code' => 'TK'),
+            '+691' => array('name' => 'Micronesia', 'code' => 'FM'),
+            '+692' => array('name' => 'Marshall Islands', 'code' => 'MH'),
+            '+850' => array('name' => 'North Korea', 'code' => 'KP'),
+            '+852' => array('name' => 'Hong Kong', 'code' => 'HK'),
+            '+853' => array('name' => 'Macau', 'code' => 'MO'),
+            '+855' => array('name' => 'Cambodia', 'code' => 'KH'),
+            '+856' => array('name' => 'Laos', 'code' => 'LA'),
+            '+880' => array('name' => 'Bangladesh', 'code' => 'BD'),
+            '+886' => array('name' => 'Taiwan', 'code' => 'TW'),
+            '+960' => array('name' => 'Maldives', 'code' => 'MV'),
+            '+961' => array('name' => 'Lebanon', 'code' => 'LB'),
+            '+962' => array('name' => 'Jordan', 'code' => 'JO'),
+            '+963' => array('name' => 'Syria', 'code' => 'SY'),
+            '+964' => array('name' => 'Iraq', 'code' => 'IQ'),
+            '+965' => array('name' => 'Kuwait', 'code' => 'KW'),
+            '+966' => array('name' => 'Saudi Arabia', 'code' => 'SA'),
+            '+967' => array('name' => 'Yemen', 'code' => 'YE'),
+            '+968' => array('name' => 'Oman', 'code' => 'OM'),
+            '+970' => array('name' => 'Palestine', 'code' => 'PS'),
+            '+971' => array('name' => 'United Arab Emirates', 'code' => 'AE'),
+            '+972' => array('name' => 'Israel', 'code' => 'IL'),
+            '+973' => array('name' => 'Bahrain', 'code' => 'BH'),
+            '+974' => array('name' => 'Qatar', 'code' => 'QA'),
+            '+975' => array('name' => 'Bhutan', 'code' => 'BT'),
+            '+976' => array('name' => 'Mongolia', 'code' => 'MN'),
+            '+977' => array('name' => 'Nepal', 'code' => 'NP'),
+            '+992' => array('name' => 'Tajikistan', 'code' => 'TJ'),
+            '+993' => array('name' => 'Turkmenistan', 'code' => 'TM'),
+            '+994' => array('name' => 'Azerbaijan', 'code' => 'AZ'),
+            '+995' => array('name' => 'Georgia', 'code' => 'GE'),
+            '+996' => array('name' => 'Kyrgyzstan', 'code' => 'KG'),
+            '+998' => array('name' => 'Uzbekistan', 'code' => 'UZ'),
+        );
+    }
+
+    /**
      * Get available field types
      */
     public function get_field_types() {
@@ -130,6 +377,11 @@ class CFWV_FormBuilder {
                 'label' => __('WhatsApp Number', 'contact-form-whatsapp'),
                 'icon' => 'dashicons-phone',
                 'description' => __('WhatsApp number with validation', 'contact-form-whatsapp')
+            ),
+            'file' => array(
+                'label' => __('File Upload', 'contact-form-whatsapp'),
+                'icon' => 'dashicons-upload',
+                'description' => __('File upload (PDF, DOC only)', 'contact-form-whatsapp')
             )
         );
     }
@@ -262,6 +514,10 @@ class CFWV_FormBuilder {
         
         $html .= '<form class="cfwv-form" data-form-id="' . $form_id . '">';
         
+        // Add nonce field and hidden form_id field
+        $html .= wp_nonce_field('cfwv_nonce', 'nonce', true, false);
+        $html .= '<input type="hidden" name="form_id" value="' . $form_id . '">';
+        
         foreach ($fields as $field) {
             $html .= $this->generate_field_html($field);
         }
@@ -311,13 +567,40 @@ class CFWV_FormBuilder {
                 break;
                 
             case 'whatsapp':
+                $country_code = isset($field->whatsapp_country_code) ? $field->whatsapp_country_code : '+1';
+                $html .= '<div class="cfwv-whatsapp-field-wrapper">';
+                $html .= '<div class="cfwv-country-code-display">';
+                $html .= '<span class="cfwv-country-code-text">' . esc_html($country_code) . '</span>';
+                $html .= '</div>';
                 $html .= '<input type="tel" ';
                 $html .= 'id="' . $field_id . '" ';
                 $html .= 'name="' . $field->field_name . '" ';
                 $html .= 'class="cfwv-field cfwv-input cfwv-whatsapp-field ' . $field->field_class . '" ';
                 $html .= 'placeholder="' . esc_attr($field->field_placeholder) . '" ';
+                $html .= 'data-country-code="' . esc_attr($country_code) . '" ';
                 $html .= $required_attr . ' />';
+                $html .= '</div>';
                 $html .= '<div class="cfwv-whatsapp-validation"></div>';
+                break;
+                
+            case 'file':
+                $html .= '<div class="cfwv-field-wrapper">';
+                $html .= '<div class="cfwv-file-upload-wrapper">';
+                $html .= '<input type="file" ';
+                $html .= 'id="' . $field_id . '" ';
+                $html .= 'name="' . $field->field_name . '" ';
+                $html .= 'class="cfwv-field cfwv-file ' . $field->field_class . '" ';
+                $html .= 'accept=".pdf,.doc,.docx" ';
+                $html .= $required_attr . ' />';
+                $html .= '<label for="' . $field_id . '" class="cfwv-file-label">';
+                $html .= '<span class="cfwv-file-button">' . __('Choose File', 'contact-form-whatsapp') . '</span>';
+                $html .= '<span class="cfwv-file-text">' . __('No file chosen', 'contact-form-whatsapp') . '</span>';
+                $html .= '</label>';
+                $html .= '</div>';
+                $html .= '<div class="cfwv-file-info">';
+                $html .= '<p class="cfwv-file-description">' . __('Accepted formats: PDF, DOC, DOCX (Max size: 5MB)', 'contact-form-whatsapp') . '</p>';
+                $html .= '</div>';
+                $html .= '</div>';
                 break;
                 
             case 'textarea':
