@@ -307,12 +307,6 @@
     border-color: #c3c4c7;
     background: #f8f9fa;
 }
-
-.cfwv-file-label:focus-within {
-    border-color: #007cba;
-    box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.1);
-}
-
 .cfwv-file-button {
     background: #007cba;
     color: white;
@@ -349,16 +343,6 @@
 .cfwv-file-upload-wrapper + .cfwv-field-error {
     margin-top: 8px;
     display: block;
-}
-
-.cfwv-file:focus {
-    outline: none;
-    border-color: #007cba;
-    box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.1);
-}
-
-.cfwv-file:hover {
-    border-color: #c3c4c7;
 }
 
 .cfwv-file.error {
