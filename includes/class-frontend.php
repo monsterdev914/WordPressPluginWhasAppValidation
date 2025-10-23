@@ -58,7 +58,13 @@ class CFWV_Frontend {
         $form_id = intval($form_data['form_id']);
         $form = $this->database->get_form($form_id);
         
+        // Debug logging
+        error_log('CFWV Frontend Debug - Form ID: ' . $form_id);
+        error_log('CFWV Frontend Debug - Form data: ' . print_r($form_data, true));
+        error_log('CFWV Frontend Debug - Form object: ' . print_r($form, true));
+        
         if (!$form || $form->status !== 'active') {
+            error_log('CFWV Frontend Debug - Form not found or inactive. Form ID: ' . $form_id . ', Form exists: ' . ($form ? 'yes' : 'no') . ', Status: ' . ($form ? $form->status : 'N/A'));
             return array(
                 'success' => false,
                 'message' => __('Form not found or inactive', 'contact-form-whatsapp')

@@ -50,12 +50,13 @@ class CFWV_Database {
             form_id mediumint(9) NOT NULL,
             field_name varchar(255) NOT NULL,
             field_label varchar(255) NOT NULL,
-            field_type enum('text', 'email', 'tel', 'textarea', 'select', 'whatsapp') NOT NULL,
+            field_type enum('text', 'email', 'tel', 'textarea', 'select', 'whatsapp', 'file') NOT NULL,
             field_options text,
             is_required tinyint(1) DEFAULT 0,
             field_order int DEFAULT 0,
             field_placeholder varchar(255),
             field_class varchar(255),
+            whatsapp_country_code varchar(10) DEFAULT '+1',
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY form_id (form_id),
@@ -138,6 +139,31 @@ class CFWV_Database {
         
         // Add unique constraint for existing tables
         $this->add_phone_uniqueness_constraint();
+        
+        // Update existing tables with new columns
+        $this->update_existing_tables();
+    }
+    
+    /**
+     * Update existing tables with new columns
+     */
+    public function update_existing_tables() {
+        // Add whatsapp_country_code column to form_fields table if it doesn't exist
+        $column_exists = $this->wpdb->get_var("
+            SELECT COUNT(*) 
+            FROM information_schema.columns 
+            WHERE table_schema = DATABASE() 
+            AND table_name = '{$this->form_fields_table}' 
+            AND column_name = 'whatsapp_country_code'
+        ");
+        
+        if (!$column_exists) {
+            $this->wpdb->query("
+                ALTER TABLE {$this->form_fields_table} 
+                ADD COLUMN whatsapp_country_code varchar(10) DEFAULT '+1' 
+                AFTER field_class
+            ");
+        }
     }
     
     /**
@@ -258,6 +284,9 @@ class CFWV_Database {
      * Save form field
      */
     public function save_form_field($data) {
+        // Ensure the whatsapp_country_code column exists before saving
+        $this->update_existing_tables();
+        
         if (isset($data['id']) && $data['id'] > 0) {
             return $this->wpdb->update($this->form_fields_table, $data, array('id' => $data['id']));
         } else {
