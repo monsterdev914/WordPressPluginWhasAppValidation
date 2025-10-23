@@ -12,9 +12,7 @@ jQuery(document).ready(function ($) {
             // Form submission
             $(document).on('submit', '.cfwv-form', this.submitForm);
 
-            // WhatsApp validation
-            $(document).on('blur', '.cfwv-whatsapp-field', this.validateWhatsApp);
-            $(document).on('input', '.cfwv-whatsapp-field', this.delayedWhatsAppValidation);
+            // WhatsApp validation removed
 
             // Country code selection (removed - users don't see country code selector)
 
@@ -33,7 +31,14 @@ jQuery(document).ready(function ($) {
 
             // Mark fields as user-interacted
             $(document).on('focus input keydown', '.cfwv-field', function () {
-                $(this).data('user-interacted', true);
+                var field = $(this);
+                field.data('user-interacted', true);
+
+                // Clear the user-interacted flag after 2 seconds of inactivity
+                clearTimeout(field.data('interaction-timeout'));
+                field.data('interaction-timeout', setTimeout(function () {
+                    field.data('user-interacted', false);
+                }, 2000));
             });
         },
 
@@ -137,8 +142,8 @@ jQuery(document).ready(function ($) {
                         }
                     } else {
                         var errorMessage = 'An error occurred';
-                        if (response.data && response.data.message) {
-                            errorMessage = response.data.message;
+                        if (response.data) {
+                            errorMessage = response.data;
                         } else if (response.message) {
                             errorMessage = response.message;
                         }
@@ -156,66 +161,9 @@ jQuery(document).ready(function ($) {
             });
         },
 
-        validateWhatsApp: function () {
-            var field = $(this);
-            var phoneNumber = field.val();
-            var countryCode = field.attr('data-country-code') || '+1';
-            var validationDiv = field.closest('.cfwv-whatsapp-field-wrapper').siblings('.cfwv-whatsapp-validation');
+        // validateWhatsApp method removed
 
-            if (!phoneNumber) {
-                validationDiv.removeClass('valid invalid').text('');
-                return;
-            }
-
-            // Combine country code with phone number for validation
-            var fullPhoneNumber = phoneNumber;
-            if (!phoneNumber.startsWith('+')) {
-                // Remove any leading zeros or special characters
-                phoneNumber = phoneNumber.replace(/^[0\s\-\(\)]+/, '');
-                fullPhoneNumber = countryCode + phoneNumber;
-            }
-
-            // Show validating state
-            validationDiv.removeClass('valid invalid').text('Validating...');
-
-            $.ajax({
-                url: cfwv_ajax.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'cfwv_validate_whatsapp',
-                    phone: fullPhoneNumber,
-                    nonce: cfwv_ajax.nonce
-                },
-                success: function (response) {
-                    if (response.success) {
-                        if (response.valid) {
-                            validationDiv.addClass('valid').removeClass('invalid').text('✓ Valid WhatsApp number');
-                            field.removeClass('error').addClass('valid');
-                        } else {
-                            validationDiv.addClass('invalid').removeClass('valid').text('✗ Not a valid WhatsApp number');
-                            field.removeClass('valid').addClass('error');
-                        }
-                    } else {
-                        validationDiv.addClass('invalid').removeClass('valid').text('✗ ' + response.message);
-                        field.removeClass('valid').addClass('error');
-                    }
-                },
-                error: function () {
-                    validationDiv.addClass('invalid').removeClass('valid').text('✗ Validation failed');
-                    field.removeClass('valid').addClass('error');
-                }
-            });
-        },
-
-        delayedWhatsAppValidation: function () {
-            var field = $(this);
-
-            clearTimeout(field.data('validation-timeout'));
-
-            field.data('validation-timeout', setTimeout(function () {
-                ContactForm.validateWhatsApp.call(field);
-            }, 1000));
-        },
+        // delayedWhatsAppValidation method removed
 
 
         validateField: function () {
@@ -265,13 +213,7 @@ jQuery(document).ready(function ($) {
                     break;
             }
 
-            // WhatsApp field validation
-            if (field.hasClass('cfwv-whatsapp-field')) {
-                if (!ContactForm.isValidPhone(fieldValue)) {
-                    ContactForm.showFieldError(field, 'Please enter a valid WhatsApp number');
-                    return false;
-                }
-            }
+            // WhatsApp field validation removed
 
             // Length validation
             if (fieldValue.length > 5000) {
@@ -300,36 +242,7 @@ jQuery(document).ready(function ($) {
                 }
             });
 
-            // Check WhatsApp validation specifically
-            var whatsappField = form.find('.cfwv-whatsapp-field');
-            if (whatsappField.length && whatsappField.val()) {
-                var validationDiv = whatsappField.closest('.cfwv-whatsapp-field-wrapper').siblings('.cfwv-whatsapp-validation');
-                console.log('WhatsApp field found, validation div classes:', validationDiv.attr('class'), 'text:', validationDiv.text());
-
-                // Only prevent submission if validation explicitly failed
-                if (validationDiv.hasClass('invalid')) {
-                    console.log('WhatsApp validation failed, preventing submission');
-                    isValid = false;
-                    if (!firstErrorField) {
-                        firstErrorField = whatsappField;
-                    }
-                }
-                // If validation is in progress, wait for it to complete
-                else if (validationDiv.text() === 'Validating...') {
-                    console.log('WhatsApp validation in progress, preventing submission');
-                    ContactForm.showFieldError(whatsappField, 'Please wait for WhatsApp validation to complete');
-                    isValid = false;
-                    if (!firstErrorField) {
-                        firstErrorField = whatsappField;
-                    }
-                }
-                // If validation hasn't been triggered yet, allow submission but trigger validation
-                else if (!validationDiv.hasClass('valid') && !validationDiv.hasClass('invalid')) {
-                    console.log('WhatsApp validation not triggered yet, allowing submission');
-                    // Trigger validation in background but don't block submission
-                    ContactForm.validateWhatsApp.call(whatsappField[0]);
-                }
-            }
+            // WhatsApp validation removed - no longer blocking form submission
 
             // Focus on first error field
             if (firstErrorField) {
