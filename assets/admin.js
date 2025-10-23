@@ -109,6 +109,8 @@ jQuery(document).ready(function ($) {
                 // Update button text based on state
                 if (fieldDetails.is(':visible')) {
                     button.text('Hide Details');
+                    // Initialize field type change to show/hide appropriate rows
+                    FormBuilder.fieldTypeChange.call(fieldDetails.find('select[name="field_type"]'));
                 } else {
                     button.text('Edit Field');
                 }
@@ -376,6 +378,7 @@ jQuery(document).ready(function ($) {
                 success: function (response) {
                     if (response.success) {
                         modal.find('#cfwv-field-form-content').html(response.data);
+                        // Initialize field type change to show/hide appropriate rows
                         FormBuilder.fieldTypeChange.call(modal.find('select[name="field_type"]'));
                     } else {
                         console.error('AJAX Error:', response.data);

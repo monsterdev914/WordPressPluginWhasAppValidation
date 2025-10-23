@@ -125,11 +125,38 @@
     display: none;
 }
 
-/* WhatsApp Field Specific */
+/* WhatsApp Field Specific - Modern Merged Design */
 .cfwv-whatsapp-field-wrapper {
+    position: relative;
     display: flex;
-    gap: 8px;
-    align-items: stretch;
+    align-items: center;
+    background: #ffffff;
+    border: 2px solid #e1e5e9;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+.cfwv-whatsapp-field-wrapper > input[type="tel"]{
+    border: none!important;
+    outline: none!important;
+    box-shadow: none;
+    background: transparent!important;
+    color: #333333;
+    font-size: 16px;
+    line-height: 1.5;
+    font-family: inherit;
+    padding: 0!important;
+    padding-left: 10px!important;
+}
+.cfwv-whatsapp-field-wrapper:hover {
+    border-color: #c3c4c7;
+}
+
+.cfwv-whatsapp-field-wrapper:focus-within {
+    border-color: #007cba;
+    box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.1);
 }
 
 .cfwv-country-code-display {
@@ -139,14 +166,14 @@
     align-items: center;
     justify-content: center;
     background: #f8f9fa;
-    border: 2px solid #e1e5e9;
-    border-radius: 6px;
-    padding: 12px 16px;
+    color: #495057;
     font-size: 16px;
     font-weight: 600;
-    color: #495057;
+    padding: 12px 16px;
     user-select: none;
     cursor: default;
+    position: relative;
+    border-right: 1px solid #e1e5e9;
 }
 
 .cfwv-country-code-text {
@@ -157,32 +184,56 @@
 .cfwv-whatsapp-field {
     flex: 1;
     padding: 12px 16px;
-    border: 2px solid #e1e5e9;
-    border-radius: 6px;
+    border: none;
+    border-radius: 0;
     font-size: 16px;
     line-height: 1.5;
-    background: #ffffff;
+    background: transparent;
     transition: all 0.3s ease;
     box-sizing: border-box;
     font-family: inherit;
+    color: #333333;
+    outline: none;
+    position: relative;
+}
+
+.cfwv-whatsapp-field::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 60%;
+    background: #e1e5e9;
+}
+
+.cfwv-whatsapp-field::placeholder {
+    color: #999999;
+    font-style: italic;
 }
 
 .cfwv-whatsapp-field:focus {
     outline: none;
-    border-color: #007cba;
-    box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.1);
-}
-
-.cfwv-whatsapp-field:hover {
-    border-color: #c3c4c7;
+    background: rgba(37, 211, 102, 0.02);
 }
 
 .cfwv-whatsapp-field.error {
+    background: rgba(231, 76, 60, 0.05);
+    color: #e74c3c;
+}
+
+.cfwv-whatsapp-field.valid {
+    background: rgba(37, 211, 102, 0.05);
+    color: #128c7e;
+}
+
+.cfwv-whatsapp-field-wrapper.error {
     border-color: #e74c3c;
     background: #fef7f7;
 }
 
-.cfwv-whatsapp-field.valid {
+.cfwv-whatsapp-field-wrapper.valid {
     border-color: #27ae60;
     background: #f7fef7;
 }
@@ -256,12 +307,6 @@
     border-color: #c3c4c7;
     background: #f8f9fa;
 }
-
-.cfwv-file-label:focus-within {
-    border-color: #007cba;
-    box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.1);
-}
-
 .cfwv-file-button {
     background: #007cba;
     color: white;
@@ -298,16 +343,6 @@
 .cfwv-file-upload-wrapper + .cfwv-field-error {
     margin-top: 8px;
     display: block;
-}
-
-.cfwv-file:focus {
-    outline: none;
-    border-color: #007cba;
-    box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.1);
-}
-
-.cfwv-file:hover {
-    border-color: #c3c4c7;
 }
 
 .cfwv-file.error {
@@ -618,17 +653,24 @@
     }
     
     .cfwv-whatsapp-field-wrapper {
-        flex-direction: column;
-        gap: 8px;
+        border-radius: 6px;
     }
     
     .cfwv-country-code-display {
         min-width: auto;
         justify-content: flex-start;
+        border-radius: 6px 6px 0 0;
+        border-right: none;
+        border-bottom: 1px solid #e1e5e9;
+    }
+    
+    .cfwv-country-code-display::after {
+        display: none;
     }
     
     .cfwv-whatsapp-field {
         font-size: 16px; /* Prevents zoom on iOS */
+        border-radius: 0 0 8px 8px;
     }
 }
 
@@ -648,9 +690,13 @@
     }
     
     .cfwv-whatsapp-field {
-        padding-left: 40px;
-        background-size: 16px;
-        background-position: left 12px center;
+        padding: 14px 16px;
+        font-size: 16px;
+    }
+    
+    .cfwv-country-code-display {
+        padding: 14px 12px;
+        font-size: 14px;
     }
     
     .cfwv-submit-btn {
