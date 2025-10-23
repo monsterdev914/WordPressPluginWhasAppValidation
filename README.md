@@ -1,6 +1,6 @@
 # Contact Form with WhatsApp Validation Plugin
 
-A comprehensive WordPress plugin for creating contact forms with real-time WhatsApp number validation, OTP verification, and advanced form management using the Wassenger API.
+A comprehensive WordPress plugin for creating contact forms with real-time WhatsApp number validation, OTP verification, file uploads, and advanced form management using the Wassenger API.
 
 ## Features
 
@@ -9,8 +9,10 @@ A comprehensive WordPress plugin for creating contact forms with real-time Whats
 - **WhatsApp Validation**: Real-time validation using Wassenger API
 - **OTP Verification**: SMS-based phone number verification with 6-digit codes
 - **Required Fields**: Name, Email, and WhatsApp number are mandatory
-- **Field Types**: Text, Email, Phone, Textarea, Dropdown, WhatsApp
+- **Field Types**: Text, Email, Phone, Textarea, Dropdown, WhatsApp, File Upload
 - **Form Customization**: Customize colors, styles, and appearance
+- **Country Code Selection**: Admin-configurable default country codes for WhatsApp fields
+- **File Upload Support**: PDF and DOC file uploads with validation
 
 ### 📊 Management & Analytics
 - **Submissions Dashboard**: View, manage, and export form submissions
@@ -25,11 +27,14 @@ A comprehensive WordPress plugin for creating contact forms with real-time Whats
 - **Duplicate Prevention**: Unique phone numbers per form
 - **Security**: Built-in nonce verification and data sanitization
 - **XSS Protection**: Proper output escaping and input sanitization
+- **File Upload Security**: File type validation and secure storage
 
 ### 🎯 User Experience
+- **Modern WhatsApp Input**: Merged country code and phone number input with modern styling
+- **Responsive Design**: Mobile-friendly forms with adaptive layouts
+- **File Upload UI**: Custom file upload interface with drag-and-drop styling
 - **Redirect Support**: Custom redirect URLs after successful submission
 - **Dashboard Integration**: Redirect to dashboard after OTP verification
-- **Responsive Design**: Mobile-friendly forms
 - **Error Handling**: Comprehensive error messages and fallbacks
 - **Manual Fallbacks**: Manual redirect options if automatic redirect fails
 
@@ -38,10 +43,11 @@ A comprehensive WordPress plugin for creating contact forms with real-time Whats
 - **Account Management**: Add, edit, and manage multiple API accounts
 - **Legacy Migration**: Migrate from old settings to new database system
 - **Global Settings**: Default dashboard URLs and configuration options
+- **Database Updates**: Automatic database schema updates with manual trigger
 
 ## Installation
 
-1. Upload the plugin files to `/wp-content/plugins/ContactFormWithWhatsAppValidation/`
+1. Upload the plugin files to `/wp-content/plugins/WordPressPluginWhasAppValidation/`
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. Configure your Wassenger API accounts in the settings page
 4. Create your first form using the Form Builder
@@ -62,14 +68,38 @@ A comprehensive WordPress plugin for creating contact forms with real-time Whats
 1. **Form Builder**: Go to WordPress Admin > Contact Form WhatsApp > Form Builder
 2. **Create Form**: Create a new form or edit an existing one
 3. **Required Fields**: Name, Email, and WhatsApp number are mandatory
-4. **Customization**: Customize form appearance, colors, and styles
-5. **Redirect URLs**: Set custom redirect URLs for after verification
-6. **Save & Deploy**: Save the form and copy the shortcode
+4. **WhatsApp Fields**: Configure default country code for WhatsApp fields
+5. **File Upload Fields**: Add file upload fields for PDF and DOC files
+6. **Customization**: Customize form appearance, colors, and styles
+7. **Redirect URLs**: Set custom redirect URLs for after verification
+8. **Save & Deploy**: Save the form and copy the shortcode
+
+### Field Types
+
+#### WhatsApp Fields
+- **Country Code Selection**: Choose default country code in admin panel
+- **Modern UI**: Merged country code and phone number input
+- **Real-time Validation**: Optional WhatsApp number validation
+- **Responsive Design**: Adapts to mobile and desktop layouts
+
+#### File Upload Fields
+- **Supported Formats**: PDF, DOC, DOCX files only
+- **File Size Limit**: 5MB maximum file size
+- **Custom UI**: Modern file upload interface with drag-and-drop styling
+- **Security**: File type validation and secure storage
+- **Error Handling**: Clear error messages for invalid files
+
+#### Other Field Types
+- **Text Fields**: Single-line text input
+- **Email Fields**: Email validation
+- **Phone Fields**: Phone number formatting
+- **Textarea**: Multi-line text input
+- **Dropdown**: Select from predefined options
 
 ### OTP Verification Flow
 
 1. **Form Submission**: User submits form with WhatsApp number
-2. **WhatsApp Validation**: Real-time validation of phone number
+2. **WhatsApp Validation**: Real-time validation of phone number (optional)
 3. **OTP Generation**: 6-digit verification code generated
 4. **SMS Delivery**: Code sent via WhatsApp to user's phone
 5. **Verification Page**: User redirected to verification page
@@ -86,8 +116,31 @@ Add the form to any page or post using the shortcode:
 
 **OTP Verification Page**: The system automatically creates verification pages with the shortcode:
 ```
-[cfwv_otp_verification session_token="abc123" redirect_url="https://yoursite.com/dashboard"]
+[cfwv_otp_verify session_token="abc123" redirect_url="https://yoursite.com/dashboard"]
 ```
+
+## Styling & Customization
+
+### WhatsApp Field Styling
+The WhatsApp field features a modern, merged design:
+- **Country Code Display**: Shows selected country code in a styled container
+- **Phone Input**: Seamlessly integrated phone number input
+- **Responsive Design**: Adapts to different screen sizes
+- **Focus States**: Blue focus indicators matching WordPress standards
+- **Error States**: Red styling for validation errors
+
+### File Upload Styling
+Custom file upload interface with:
+- **Modern Button**: Styled "Choose File" button
+- **File Preview**: Shows selected file name
+- **Drag & Drop**: Visual feedback for file selection
+- **Error Handling**: Clear error messages and styling
+
+### Form Styling
+- **Consistent Design**: All fields follow WordPress design standards
+- **Responsive Layout**: Mobile-first responsive design
+- **Custom CSS**: Easy customization through CSS classes
+- **Theme Integration**: Works with most WordPress themes
 
 ## Troubleshooting
 
@@ -96,7 +149,7 @@ Add the form to any page or post using the shortcode:
 If you get a fatal error during activation, follow these steps:
 
 1. **Run the Debug Script**:
-   - Access `yoursite.com/wp-content/plugins/ContactFormWithWhatsAppValidation/debug.php`
+   - Access `yoursite.com/wp-content/plugins/WordPressPluginWhasAppValidation/debug.php`
    - Check for any red error messages
    - This will help identify the specific issue
 
@@ -118,6 +171,37 @@ If you get a fatal error during activation, follow these steps:
    - Ensure proper file permissions (644 for files, 755 for directories)
    - Check that the web server can read the plugin files
 
+### Database Issues
+
+1. **Update Database Schema**:
+   - Go to WordPress Admin > Contact Form WhatsApp > Settings
+   - Click "Update Database" button to apply schema changes
+   - This ensures all new columns and tables are created
+
+2. **WhatsApp Country Code Issues**:
+   - Ensure the `whatsapp_country_code` column exists in the database
+   - Use the "Update Database" button in admin settings
+   - Check that the column is properly added to existing forms
+
+### Form Submission Issues
+
+1. **Security Check Failed**:
+   - Ensure nonce fields are properly included in forms
+   - Check that AJAX handlers are registered correctly
+   - Verify WordPress nonce verification is working
+
+2. **File Upload Issues**:
+   - Check file size limits (5MB maximum)
+   - Verify file types (PDF, DOC, DOCX only)
+   - Ensure upload directory permissions are correct
+   - Check PHP upload limits in server configuration
+
+3. **WhatsApp Validation Issues**:
+   - Verify Wassenger API credentials are correct
+   - Check API connection in admin settings
+   - Ensure phone numbers are in correct format
+   - Test with different country codes
+
 ### Common Solutions
 
 1. **Deactivate and Reactivate**:
@@ -131,6 +215,7 @@ If you get a fatal error during activation, follow these steps:
 3. **Database Issues**:
    - Check if WordPress can create new database tables
    - Verify database user has CREATE and ALTER privileges
+   - Use the "Update Database" button in admin settings
 
 4. **PHP Errors**:
    - Check for syntax errors in the error log
@@ -153,18 +238,21 @@ If you continue to experience issues:
 - **PHP**: 7.0 or higher
 - **MySQL**: 5.6 or higher
 - **Wassenger API Token**: Required for WhatsApp validation
+- **File Upload Support**: Required for file upload functionality
 
 ## File Structure
 
 ```
-ContactFormWithWhatsAppValidation/
+WordPressPluginWhasAppValidation/
 ├── contact-form-whatsapp-validation.php (Main plugin file)
 ├── includes/
 │   ├── class-database.php
 │   ├── class-form-builder.php
 │   ├── class-whatsapp-validator.php
 │   ├── class-admin.php
-│   └── class-frontend.php
+│   ├── class-frontend.php
+│   ├── class-otp-handler.php
+│   └── class-background-processor.php
 ├── assets/
 │   ├── admin.js
 │   ├── frontend.js
@@ -194,7 +282,7 @@ Examples:
 
 The plugin creates these database tables:
 - `wp_cfwv_forms` - Form configurations
-- `wp_cfwv_form_fields` - Form field definitions
+- `wp_cfwv_form_fields` - Form field definitions (includes whatsapp_country_code column)
 - `wp_cfwv_submissions` - Form submissions (with unique phone numbers per form)
 - `wp_cfwv_submission_data` - Submission field data
 - `wp_cfwv_otp_sessions` - OTP verification sessions
@@ -229,6 +317,7 @@ This plugin integrates with the Wassenger API for WhatsApp services:
 - **XSS Protection**: Proper output escaping and input sanitization
 - **Session Security**: Secure OTP sessions with expiration and attempt limits
 - **Phone Number Uniqueness**: Database-level constraints prevent duplicate submissions
+- **File Upload Security**: File type validation, size limits, and secure storage
 
 ## Advanced Features
 
@@ -251,13 +340,30 @@ This plugin integrates with the Wassenger API for WhatsApp services:
 - **Smart Handling**: Updates existing unverified submissions
 - **Error Messages**: Clear feedback for duplicate attempts
 
+### File Upload System
+- **File Type Validation**: Only PDF, DOC, DOCX files allowed
+- **Size Limits**: 5MB maximum file size
+- **Secure Storage**: Files stored in WordPress uploads directory
+- **Unique Naming**: Timestamp-based unique filenames
+- **Error Handling**: Clear error messages for invalid files
+
 ## License
 
 This plugin is released under the GPL v2 or later license.
 
 ## Changelog
 
-### Version 2.0.0 (Current)
+### Version 2.1.0 (Current)
+- **WhatsApp Field Enhancement**: Modern merged country code and phone input design
+- **Country Code Selection**: Admin-configurable default country codes
+- **File Upload Support**: PDF and DOC file upload functionality
+- **Modern UI**: Updated styling for all form elements
+- **Responsive Design**: Improved mobile and tablet layouts
+- **Database Updates**: Automatic schema updates with manual trigger
+- **Enhanced Security**: Improved file upload validation and security
+- **Form Submission**: Streamlined form submission with better error handling
+
+### Version 2.0.0
 - **OTP Verification System**: Complete phone number verification flow
 - **Multiple Wassenger Accounts**: Load balancing and failover support
 - **Phone Number Uniqueness**: Prevent duplicate submissions per form
@@ -279,50 +385,50 @@ This plugin is released under the GPL v2 or later license.
 
 ### ✅ Recently Implemented Features
 
-1. **Complete OTP Verification Flow**
-   - 6-digit code generation and validation
-   - WhatsApp message delivery via Wassenger API
-   - Secure session management with 10-minute expiration
-   - Automatic redirect to verification page after form submission
+1. **Modern WhatsApp Field Design**
+   - Merged country code and phone number input
+   - Admin-configurable country code selection
+   - Responsive design for all screen sizes
+   - Consistent styling with WordPress standards
 
-2. **Multiple Wassenger Account Management**
-   - Database-driven account storage
-   - Load balancing across multiple accounts
-   - Automatic failover if one account reaches limits
-   - Admin interface for account management
+2. **File Upload Functionality**
+   - PDF, DOC, DOCX file support
+   - 5MB file size limit
+   - Custom upload UI with modern styling
+   - Secure file storage and validation
 
-3. **Phone Number Uniqueness System**
-   - Database-level unique constraints per form
-   - Smart handling of duplicate submissions
-   - Clear error messages for users
-   - Updates existing unverified submissions
+3. **Enhanced Form Builder**
+   - Country code selection for WhatsApp fields
+   - File upload field type
+   - Improved admin interface
+   - Better field editing experience
 
-4. **Dashboard Integration**
-   - Global default dashboard URL setting
-   - Per-form redirect URL override
-   - Automatic redirect after OTP verification
-   - Manual fallback options for failed redirects
+4. **Improved Form Submission**
+   - Streamlined AJAX submission process
+   - Better error handling and user feedback
+   - File upload integration
+   - Enhanced security measures
 
-5. **Enhanced Security & Error Handling**
-   - Comprehensive input sanitization
-   - Session-based OTP verification
-   - Attempt limiting and brute force protection
-   - Detailed error logging and debugging
+5. **Database Schema Updates**
+   - Automatic database updates
+   - Manual update trigger in admin
+   - WhatsApp country code column
+   - File upload field support
 
 ### 🔧 Technical Improvements
 
-- **Database Migration**: Automatic migration from legacy settings
-- **Background Processing**: Health checks and maintenance tasks
-- **Real-time Logs**: Monitor API health and system status
-- **Enhanced Debugging**: Comprehensive logging for troubleshooting
-- **Responsive Design**: Mobile-friendly verification pages
+- **Modern CSS**: Updated styling for all form elements
+- **Responsive Design**: Mobile-first approach with adaptive layouts
+- **File Upload Security**: Comprehensive file validation and secure storage
+- **Database Management**: Automatic schema updates with manual override
+- **Enhanced Debugging**: Improved error logging and troubleshooting
 
 ### 🚀 Ready for Production
 
 The plugin is now feature-complete and ready for production use with:
-- Full OTP verification workflow
-- Multiple Wassenger account support
-- Phone number uniqueness enforcement
-- Dashboard integration
+- Modern WhatsApp field design with country code selection
+- File upload functionality with security validation
+- Enhanced form builder with improved admin interface
+- Streamlined form submission process
 - Comprehensive security measures
-- Detailed documentation and troubleshooting guides 
+- Detailed documentation and troubleshooting guides
