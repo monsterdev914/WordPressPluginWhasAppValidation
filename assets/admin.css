@@ -765,4 +765,63 @@ input[type="submit"].saving {
     .cfwv-submissions-actions {
         display: none;
     }
+}
+
+/* File link styling */
+.cfwv-file-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    background: #f0f0f1;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #2271b1;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.cfwv-file-link:hover {
+    background: #e8e8e9;
+    border-color: #8c8f94;
+    color: #135e96;
+    text-decoration: none;
+}
+
+.cfwv-file-icon {
+    margin-right: 6px;
+    font-size: 14px;
+}
+
+/* Submission details modal */
+.cfwv-submission-details .cfwv-table td {
+    vertical-align: top;
+}
+
+/* Session count styling */
+.cfwv-session-count {
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 3px;
+    background: #f0f0f1;
+    color: #333;
+}
+
+.cfwv-session-count:contains("5") {
+    background: #ffebcd;
+    color: #8b4513;
+}
+
+/* Accounts actions */
+.cfwv-accounts-actions {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.cfwv-reset-info {
+    margin-left: 10px;
+    color: #666;
+    font-size: 13px;
+    font-style: italic;
 } 

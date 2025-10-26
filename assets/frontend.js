@@ -14,7 +14,8 @@ jQuery(document).ready(function ($) {
 
             // WhatsApp validation removed
 
-            // Country code selection (removed - users don't see country code selector)
+            // Country code selection
+            $(document).on('change', '.cfwv-country-code-selector', this.handleCountryCodeChange);
 
             // Real-time validation
             $(document).on('blur', '.cfwv-field', this.validateField);
@@ -44,6 +45,22 @@ jQuery(document).ready(function ($) {
 
         initValidation: function () {
             // Initialize any third-party validation libraries if needed
+        },
+
+        handleCountryCodeChange: function () {
+            var selector = $(this);
+            var wrapper = selector.closest('.cfwv-whatsapp-field-wrapper');
+            var phoneField = wrapper.find('.cfwv-whatsapp-field');
+            var displayElement = wrapper.find('.cfwv-country-code-display');
+            var selectedCountryCode = selector.val();
+            var selectedOption = selector.find('option:selected');
+            var displayText = selectedOption.data('display') || selectedCountryCode;
+
+            // Update the data-country-code attribute
+            phoneField.attr('data-country-code', selectedCountryCode);
+
+            // Update the display text to show only the country code
+            displayElement.text(displayText);
         },
 
         submitForm: function (e) {
@@ -270,7 +287,9 @@ jQuery(document).ready(function ($) {
                     }
                     // Handle WhatsApp fields specially to combine country code
                     else if (field.hasClass('cfwv-whatsapp-field')) {
-                        var countryCode = field.attr('data-country-code') || '+1';
+                        var wrapper = field.closest('.cfwv-whatsapp-field-wrapper');
+                        var countryCodeSelector = wrapper.find('.cfwv-country-code-selector');
+                        var countryCode = countryCodeSelector.length ? countryCodeSelector.val() : '+1';
                         var phoneNumber = value;
 
                         // If phone number doesn't start with +, prepend country code
@@ -491,19 +510,9 @@ jQuery(document).ready(function ($) {
             // Remove all non-digit characters except +
             var cleanPhone = phone.replace(/[^\d+]/g, '');
 
-            // Check if it's a valid international format
-            var intlRegex = /^\+[1-9]\d{1,14}$/;
-            if (intlRegex.test(cleanPhone)) {
-                return true;
-            }
-
-            // Check if it's a valid US format without +
-            var usRegex = /^[1-9]\d{9}$/;
-            if (usRegex.test(cleanPhone)) {
-                return true;
-            }
-
-            return false;
+            // Check if the cleaned phone contains only digits and +
+            var validRegex = /^[\d+]+$/;
+            return validRegex.test(cleanPhone);
         },
 
         isValidUrl: function (url) {

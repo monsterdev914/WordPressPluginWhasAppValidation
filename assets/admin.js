@@ -267,18 +267,11 @@ jQuery(document).ready(function ($) {
             var fieldType = $(this).val();
             var table = $(this).closest('table');
             var optionsRow = table.find('.cfwv-field-options-row');
-            var whatsappCountryRow = table.find('.cfwv-whatsapp-country-row');
 
             if (fieldType === 'select') {
                 optionsRow.show();
             } else {
                 optionsRow.hide();
-            }
-
-            if (fieldType === 'whatsapp') {
-                whatsappCountryRow.show();
-            } else {
-                whatsappCountryRow.hide();
             }
         },
 
@@ -967,6 +960,44 @@ jQuery(document).ready(function ($) {
             },
             error: function () {
                 showNotice('Error deleting Wassenger account. Please try again.', 'error');
+            },
+            complete: function () {
+                button.prop('disabled', false).text(originalText);
+            }
+        });
+    });
+
+    // Reset session messages
+    $(document).on('click', '.cfwv-reset-session-messages', function (e) {
+        e.preventDefault();
+
+        if (!confirm('Are you sure you want to reset all session message counts? This will restart the round-robin cycle.')) {
+            return;
+        }
+
+        var button = $(this);
+        var originalText = button.text();
+
+        button.prop('disabled', true).text('Resetting...');
+
+        $.ajax({
+            url: cfwv_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'cfwv_reset_session_messages',
+                nonce: cfwv_ajax.nonce
+            },
+            success: function (response) {
+                if (response.success) {
+                    showNotice(response.data.message, 'success');
+                    // Reload the page to update the table
+                    location.reload();
+                } else {
+                    showNotice(response.data || 'Error resetting session messages', 'error');
+                }
+            },
+            error: function () {
+                showNotice('Error resetting session messages. Please try again.', 'error');
             },
             complete: function () {
                 button.prop('disabled', false).text(originalText);
