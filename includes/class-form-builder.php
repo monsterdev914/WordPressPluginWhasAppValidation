@@ -100,9 +100,9 @@ class CFWV_FormBuilder {
      * Get country codes for WhatsApp fields
      */
     private function get_country_codes() {
-        return array(
-            '+1' => array('name' => 'United States', 'code' => 'US'),
-            '+1' => array('name' => 'Canada', 'code' => 'CA'),
+        $countries = array(
+            '+1-US' => array('name' => 'United States', 'code' => 'US'),
+            '+1-CA' => array('name' => 'Canada', 'code' => 'CA'),
             '+44' => array('name' => 'United Kingdom', 'code' => 'GB'),
             '+33' => array('name' => 'France', 'code' => 'FR'),
             '+49' => array('name' => 'Germany', 'code' => 'DE'),
@@ -341,6 +341,13 @@ class CFWV_FormBuilder {
             '+996' => array('name' => 'Kyrgyzstan', 'code' => 'KG'),
             '+998' => array('name' => 'Uzbekistan', 'code' => 'UZ'),
         );
+        
+        // Sort countries alphabetically by name
+        uasort($countries, function($a, $b) {
+            return strcmp($a['name'], $b['name']);
+        });
+        
+        return $countries;
     }
 
     /**
@@ -567,17 +574,25 @@ class CFWV_FormBuilder {
                 break;
                 
             case 'whatsapp':
-                $country_code = isset($field->whatsapp_country_code) ? $field->whatsapp_country_code : '+1';
+                $country_codes = $this->get_country_codes();
+                $default_country = '+1'; // Default to US
                 $html .= '<div class="cfwv-whatsapp-field-wrapper">';
-                $html .= '<div class="cfwv-country-code-display">';
-                $html .= '<span class="cfwv-country-code-text">' . esc_html($country_code) . '</span>';
+                $html .= '<div class="cfwv-country-code-container">';
+                $html .= '<select class="cfwv-country-code-selector" name="' . $field->field_name . '_country_code" style="color: transparent;">';
+                foreach ($country_codes as $code => $country) {
+                    $actual_code = strpos($code, '-') !== false ? substr($code, 0, strpos($code, '-')) : $code;
+                    $selected = ($actual_code === $default_country) ? 'selected' : '';
+                    $html .= '<option value="' . esc_attr($actual_code) . '" ' . $selected . ' data-display="' . esc_attr($actual_code) . '">' . esc_html($country['name'] . ' (' . $actual_code . ')') . '</option>';
+                }
+                $html .= '</select>';
+                $html .= '<div class="cfwv-country-code-display">' . esc_html($default_country) . '</div>';
                 $html .= '</div>';
                 $html .= '<input type="tel" ';
                 $html .= 'id="' . $field_id . '" ';
                 $html .= 'name="' . $field->field_name . '" ';
                 $html .= 'class="cfwv-field cfwv-input cfwv-whatsapp-field ' . $field->field_class . '" ';
                 $html .= 'placeholder="' . esc_attr($field->field_placeholder) . '" ';
-                $html .= 'data-country-code="' . esc_attr($country_code) . '" ';
+                $html .= 'data-country-code="' . esc_attr($default_country) . '" ';
                 $html .= $required_attr . ' />';
                 $html .= '</div>';
                 $html .= '<div class="cfwv-whatsapp-validation"></div>';

@@ -122,11 +122,13 @@ class CFWV_Database {
             is_active tinyint(1) DEFAULT 1,
             daily_limit int DEFAULT 1000,
             daily_used int DEFAULT 0,
+            session_messages int DEFAULT 0,
             last_used datetime NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY is_active (is_active),
-            KEY daily_used (daily_used)
+            KEY daily_used (daily_used),
+            KEY session_messages (session_messages)
         ) $charset_collate;";
         
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
@@ -535,16 +537,23 @@ class CFWV_Database {
     }
     
     /**
-     * Get active Wassenger account
+     * Get active Wassenger account using round-robin logic
      */
     public function get_active_wassenger_account() {
         $wassenger_accounts_table = $this->wpdb->prefix . 'cfwv_wassenger_accounts';
         
-        // Get account with lowest daily usage that's under limit
+        // First, check if any account has reached 5 messages and reset them
+        $this->wpdb->query(
+            "UPDATE $wassenger_accounts_table 
+             SET session_messages = 0 
+             WHERE session_messages >= 5"
+        );
+        
+        // Get account with lowest session message count that's under daily limit
         $account = $this->wpdb->get_row(
             "SELECT * FROM $wassenger_accounts_table 
              WHERE is_active = 1 AND daily_used < daily_limit 
-             ORDER BY daily_used ASC, last_used ASC 
+             ORDER BY session_messages ASC, last_used ASC 
              LIMIT 1"
         );
         
@@ -559,7 +568,9 @@ class CFWV_Database {
         
         $this->wpdb->query($this->wpdb->prepare(
             "UPDATE $wassenger_accounts_table 
-             SET daily_used = daily_used + 1, last_used = %s 
+             SET daily_used = daily_used + 1, 
+                 session_messages = session_messages + 1, 
+                 last_used = %s 
              WHERE id = %d",
             current_time('mysql'),
             $account_id
@@ -647,6 +658,31 @@ class CFWV_Database {
         return array(
             'success' => false,
             'message' => 'No legacy settings found or accounts already exist.'
+        );
+    }
+    
+    /**
+     * Reset session messages for all accounts
+     */
+    public function reset_session_messages() {
+        $wassenger_accounts_table = $this->wpdb->prefix . 'cfwv_wassenger_accounts';
+        
+        $this->wpdb->query(
+            "UPDATE $wassenger_accounts_table SET session_messages = 0"
+        );
+    }
+    
+    /**
+     * Get Wassenger account usage statistics
+     */
+    public function get_wassenger_usage_stats() {
+        $wassenger_accounts_table = $this->wpdb->prefix . 'cfwv_wassenger_accounts';
+        
+        return $this->wpdb->get_results(
+            "SELECT id, account_name, session_messages, daily_used, daily_limit, last_used 
+             FROM $wassenger_accounts_table 
+             WHERE is_active = 1 
+             ORDER BY session_messages ASC"
         );
     }
 } 

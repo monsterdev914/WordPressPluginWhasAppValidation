@@ -52,7 +52,7 @@ class ContactFormWhatsAppValidation {
         add_action('wp_ajax_cfwv_submit_form', array($this, 'ajax_submit_form'));
         add_action('wp_ajax_nopriv_cfwv_submit_form', array($this, 'ajax_submit_form'));
         add_action('wp_ajax_cfwv_initialize_tables', array($this, 'ajax_initialize_tables'));
-        add_action('wp_ajax_cfwv_clear_logs', array($this->admin, 'ajax_clear_logs'));
+        add_action('wp_ajax_cfwv_reset_session_messages', array($this->admin, 'ajax_reset_session_messages'));
         add_action('wp_ajax_cfwv_verify_otp', array($this, 'ajax_verify_otp'));
         add_action('wp_ajax_nopriv_cfwv_verify_otp', array($this, 'ajax_verify_otp'));
         add_action('wp_ajax_cfwv_resend_otp', array($this, 'ajax_resend_otp'));
@@ -431,6 +431,7 @@ class ContactFormWhatsAppValidation {
             <div class="cfwv-otp-header">
                 <h2 style="margin-bottom: 10px; font-size: 24px; font-weight: 600; color: #333;">Verify Your Phone Number</h2>
                 <p style="margin-bottom: 20px; font-size: 16px; color: #666;"><?php echo $session->phone_number; ?></p>
+                <p style="margin-bottom: 20px; font-size: 14px; color: #666;">Please wait 2-3 minutes to receive the code</p>
             </div>
             
             <form id="cfwv-otp-form" class="cfwv-otp-form">

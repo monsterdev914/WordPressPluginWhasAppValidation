@@ -272,19 +272,14 @@ class CFWV_Frontend {
     }
     
     /**
-     * Validate phone number
+     * Validate phone number - only check for non-digit characters
      */
     private function validate_phone_number($phone) {
         // Remove all non-digit characters except +
         $cleaned = preg_replace('/[^\d+]/', '', $phone);
         
-        // Check if it's a valid international format
-        if (preg_match('/^\+[1-9]\d{1,14}$/', $cleaned)) {
-            return true;
-        }
-        
-        // Check if it's a valid US format without +
-        if (preg_match('/^[1-9]\d{9}$/', $cleaned)) {
+        // Check if the cleaned phone contains only digits and +
+        if (preg_match('/^[\d+]+$/', $cleaned)) {
             return true;
         }
         

@@ -617,12 +617,23 @@ class CFWV_Admin {
             return;
         }
         
+        // Add reset button
+        echo '<div class="cfwv-accounts-actions" style="margin-bottom: 15px;">';
+        echo '<button type="button" class="button cfwv-reset-session-messages">';
+        echo __('Reset Session Messages', 'contact-form-whatsapp');
+        echo '</button>';
+        echo '<span class="cfwv-reset-info" style="margin-left: 10px; color: #666; font-size: 13px;">';
+        echo __('Round-robin switches accounts after 5 messages', 'contact-form-whatsapp');
+        echo '</span>';
+        echo '</div>';
+        
         echo '<table class="wp-list-table widefat fixed striped">';
         echo '<thead>';
         echo '<tr>';
         echo '<th>' . __('Account Name', 'contact-form-whatsapp') . '</th>';
         echo '<th>' . __('API Token', 'contact-form-whatsapp') . '</th>';
         echo '<th>' . __('Number ID', 'contact-form-whatsapp') . '</th>';
+        echo '<th>' . __('Session Messages', 'contact-form-whatsapp') . '</th>';
         echo '<th>' . __('Daily Usage', 'contact-form-whatsapp') . '</th>';
         echo '<th>' . __('Status', 'contact-form-whatsapp') . '</th>';
         echo '<th>' . __('Actions', 'contact-form-whatsapp') . '</th>';
@@ -639,6 +650,7 @@ class CFWV_Admin {
             echo '<td><strong>' . esc_html($account->account_name) . '</strong></td>';
             echo '<td>' . esc_html(substr($account->api_token, 0, 20) . '...') . '</td>';
             echo '<td>' . esc_html($account->number_id) . '</td>';
+            echo '<td><span class="cfwv-session-count">' . $account->session_messages . ' / 5</span></td>';
             echo '<td>' . $account->daily_used . ' / ' . $account->daily_limit . ' (' . $usage_percentage . '%)</td>';
             echo '<td><span class="cfwv-status cfwv-status-' . $status_class . '">' . $status_text . '</span></td>';
             echo '<td>';
@@ -1016,22 +1028,6 @@ class CFWV_Admin {
                         <p class="description"><?php _e('For dropdown fields. One option per line. Format: value|label', 'contact-form-whatsapp'); ?></p>
                     </td>
                 </tr>
-                <tr class="cfwv-whatsapp-country-row" style="display: none;">
-                    <th><label for="whatsapp_country_code"><?php _e('Default Country Code', 'contact-form-whatsapp'); ?></label></th>
-                    <td>
-                        <select name="whatsapp_country_code" id="whatsapp_country_code" class="regular-text">
-                            <?php
-                            $country_codes = $this->get_country_codes();
-                            $selected_country = $field && isset($field->whatsapp_country_code) ? $field->whatsapp_country_code : '+1';
-                            foreach ($country_codes as $code => $country) {
-                                $selected = ($selected_country === $code) ? 'selected' : '';
-                                echo '<option value="' . esc_attr($code) . '" ' . $selected . '>' . esc_html($country['name'] . ' (' . $code . ')') . '</option>';
-                            }
-                            ?>
-                        </select>
-                        <p class="description"><?php _e('Select the default country code for this WhatsApp field. Users will see this as pre-selected.', 'contact-form-whatsapp'); ?></p>
-                    </td>
-                </tr>
                 <tr>
                     <th><label for="is_required"><?php _e('Required', 'contact-form-whatsapp'); ?></label></th>
                     <td>
@@ -1118,11 +1114,6 @@ class CFWV_Admin {
                 'field_placeholder' => sanitize_text_field($_POST['field_placeholder']),
                 'field_class' => sanitize_text_field($_POST['field_class'])
             );
-            
-            // Only add whatsapp_country_code if it's a WhatsApp field
-            if (isset($_POST['field_type']) && $_POST['field_type'] === 'whatsapp') {
-                $field_data['whatsapp_country_code'] = isset($_POST['whatsapp_country_code']) ? sanitize_text_field($_POST['whatsapp_country_code']) : '+1';
-            }
             
             // Validate field data
             $errors = $this->form_builder->validate_field_data($field_data);
@@ -1272,7 +1263,19 @@ class CFWV_Admin {
                 $field_label = ucfirst(str_replace('_', ' ', $field_name));
                 $html .= '<tr>';
                 $html .= '<th>' . esc_html($field_label) . '</th>';
-                $html .= '<td>' . esc_html($field_value) . '</td>';
+                $html .= '<td>';
+                
+                // Check if this is a file URL
+                if (filter_var($field_value, FILTER_VALIDATE_URL) && $this->is_file_url($field_value)) {
+                    $file_name = basename($field_value);
+                    $html .= '<a href="' . esc_url($field_value) . '" target="_blank" class="cfwv-file-link">';
+                    $html .= '<span class="cfwv-file-icon">📄</span> ' . esc_html($file_name);
+                    $html .= '</a>';
+                } else {
+                    $html .= esc_html($field_value);
+                }
+                
+                $html .= '</td>';
                 $html .= '</tr>';
             }
             $html .= '</table>';
@@ -1281,6 +1284,20 @@ class CFWV_Admin {
         $html .= '</div>';
         
         wp_send_json_success($html);
+    }
+    
+    /**
+     * Check if URL is a file URL
+     */
+    private function is_file_url($url) {
+        $file_extensions = array('pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'gif', 'zip', 'rar', 'xlsx', 'xls', 'ppt', 'pptx');
+        $path_info = pathinfo(parse_url($url, PHP_URL_PATH));
+        
+        if (isset($path_info['extension'])) {
+            return in_array(strtolower($path_info['extension']), $file_extensions);
+        }
+        
+        return false;
     }
     
     public function ajax_delete_submission() {
@@ -1392,6 +1409,18 @@ class CFWV_Admin {
         } else {
             wp_send_json_error(__('Failed to add Wassenger account.', 'contact-form-whatsapp'));
         }
+    }
+    
+    public function ajax_reset_session_messages() {
+        check_ajax_referer('cfwv_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('You do not have permission to perform this action.', 'contact-form-whatsapp'));
+        }
+        
+        $this->database->reset_session_messages();
+        
+        wp_send_json_success(array('message' => __('Session messages reset successfully.', 'contact-form-whatsapp')));
     }
     
     public function ajax_delete_wassenger_account() {
