@@ -21,6 +21,9 @@ class CFWV_BackgroundProcessor {
         // Register cron hooks
         add_action('cfwv_check_api_health', array($this, 'check_api_health'));
         
+        // Register admin notice hook to show cron status
+        add_action('admin_notices', array($this, 'show_status_notice'));
+        
         // Initialize immediately since we're already in the init phase
         $this->init();
     }
@@ -55,6 +58,10 @@ class CFWV_BackgroundProcessor {
      */
     public static function get_custom_intervals_definition() {
         return array(
+            'every30seconds' => array(
+                'interval' => 30,
+                'display'  => __('Every 30 Seconds', 'contact-form-whatsapp')
+            ),
             'every1minutes' => array(
                 'interval' => 1 * 60,
                 'display'  => __('Every 1 Minutes', 'contact-form-whatsapp')
@@ -85,8 +92,8 @@ class CFWV_BackgroundProcessor {
         $this->log_process('🔧 Attempting to schedule cron jobs...');
         
         // Check API health - you can change the interval here:
-        // Options: 'every5minutes', 'every10minutes', 'every15minutes', 'every30minutes', 'hourly', 'twicedaily', 'daily'
-        $interval = 'every5minutes'; // ← Change this to your preferred interval
+        // Options: 'every30seconds', 'every1minutes', 'every5minutes', 'every10minutes', 'every15minutes', 'every30minutes', 'hourly', 'twicedaily', 'daily'
+        $interval = 'every30seconds'; // ← Change this to your preferred interval
         
         // Check if custom intervals are available
         $schedules = wp_get_schedules();
@@ -119,7 +126,7 @@ class CFWV_BackgroundProcessor {
         self::log_process_static('🔧 Scheduling background processor for plugin activation...');
         
         // Preferred interval - try custom first, fallback to built-in WordPress intervals
-        $preferred_interval = 'every5minutes';
+        $preferred_interval = 'every30seconds';
         
         // Get available schedules and manually add our custom intervals if not present
         $schedules = wp_get_schedules();
@@ -227,8 +234,21 @@ class CFWV_BackgroundProcessor {
                 return;
             }
             
-            // Test API connection
-            $api_test = $this->whatsapp_validator->sync_session_for_wassenger();
+            // Get active Wassenger account
+            if (!$this->database) {
+                $this->log_process('⚠️ Database not initialized, attempting to initialize...');
+                $this->init();
+            }
+            
+            $account = $this->database->get_active_wassenger_account();
+            
+            if (!$account) {
+                $this->log_process('❌ No active Wassenger account found. Please add an account in settings.');
+                return;
+            }
+            
+            // Test API connection with the account
+            $api_test = $this->whatsapp_validator->sync_session_for_wassenger($account);
             $this->log_process('API health check result: ' . print_r($api_test, true));
             if (!$api_test['success']) {
                 $this->log_process('API connection failed: ' . $api_test['message']);
@@ -389,23 +409,29 @@ class CFWV_BackgroundProcessor {
         $logs = get_option('cfwv_background_logs', array());
         $last_log = !empty($logs) ? $logs[0] : null;
         
-        // Get API token status
-        $api_token = get_option('cfwv_wassenger_api_token', '');
-        $number_id = get_option('cfwv_wassenger_number_id', '');
+        // Check if Wassenger accounts are configured (database or legacy)
+        $has_accounts = false;
+        
+        // Check database accounts (new system)
+        if (isset($this->database)) {
+            $accounts = $this->database->get_wassenger_accounts();
+            $has_accounts = !empty($accounts);
+        }
+        
+        // Also check legacy options (old system)
+        if (!$has_accounts) {
+            $api_token = get_option('cfwv_wassenger_api_token', '');
+            $number_id = get_option('cfwv_wassenger_number_id', '');
+            $has_accounts = !empty($api_token) && !empty($number_id);
+        }
         
         $status_class = 'notice notice-info';
         $status_message = '';
         
-        if (!$api_token || !$number_id) {
+        if (!$has_accounts) {
             $status_class = 'notice notice-warning';
             $status_message = '<strong>⚠️ WhatsApp Session Monitor:</strong> ';
-            if (!$api_token && !$number_id) {
-                $status_message .= 'API Token and Number ID not configured. ';
-            } elseif (!$api_token) {
-                $status_message .= 'API Token not configured. ';
-            } else {
-                $status_message .= 'Number ID not configured. ';
-            }
+            $status_message .= 'Wassenger account not configured. ';
             $status_message .= '<a href="' . admin_url('admin.php?page=cfwv-settings') . '">Configure Settings</a>';
         } elseif (!$is_scheduled) {
             $status_class = 'notice notice-error';

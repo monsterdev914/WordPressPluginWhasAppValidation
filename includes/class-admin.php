@@ -29,6 +29,7 @@ class CFWV_Admin {
         add_action('wp_ajax_cfwv_delete_submission', array($this, 'ajax_delete_submission'));
         add_action('wp_ajax_cfwv_export_submissions', array($this, 'ajax_export_submissions'));
         add_action('wp_ajax_cfwv_test_api', array($this, 'ajax_test_api'));
+        add_action('wp_ajax_cfwv_clear_logs', array($this, 'ajax_clear_logs'));
         add_action('wp_ajax_cfwv_add_wassenger_account', array($this, 'ajax_add_wassenger_account'));
         add_action('wp_ajax_cfwv_delete_wassenger_account', array($this, 'ajax_delete_wassenger_account'));
         add_action('wp_ajax_cfwv_get_wassenger_accounts', array($this, 'ajax_get_wassenger_accounts'));
@@ -646,11 +647,14 @@ class CFWV_Admin {
             $status_class = $account->is_active ? 'active' : 'inactive';
             $status_text = $account->is_active ? __('Active', 'contact-form-whatsapp') : __('Inactive', 'contact-form-whatsapp');
             
+            // Safely get session_messages with fallback
+            $session_messages = isset($account->session_messages) ? $account->session_messages : 0;
+            
             echo '<tr>';
             echo '<td><strong>' . esc_html($account->account_name) . '</strong></td>';
             echo '<td>' . esc_html(substr($account->api_token, 0, 20) . '...') . '</td>';
             echo '<td>' . esc_html($account->number_id) . '</td>';
-            echo '<td><span class="cfwv-session-count">' . $account->session_messages . ' / 5</span></td>';
+            echo '<td><span class="cfwv-session-count">' . $session_messages . ' / 5</span></td>';
             echo '<td>' . $account->daily_used . ' / ' . $account->daily_limit . ' (' . $usage_percentage . '%)</td>';
             echo '<td><span class="cfwv-status cfwv-status-' . $status_class . '">' . $status_text . '</span></td>';
             echo '<td>';

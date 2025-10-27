@@ -166,6 +166,24 @@ class CFWV_Database {
                 AFTER field_class
             ");
         }
+        
+        // Add session_messages column to wassenger_accounts table if it doesn't exist
+        $wassenger_accounts_table = $this->wpdb->prefix . 'cfwv_wassenger_accounts';
+        $session_messages_exists = $this->wpdb->get_var("
+            SELECT COUNT(*) 
+            FROM information_schema.columns 
+            WHERE table_schema = DATABASE() 
+            AND table_name = '$wassenger_accounts_table' 
+            AND column_name = 'session_messages'
+        ");
+        
+        if (!$session_messages_exists) {
+            $this->wpdb->query("
+                ALTER TABLE $wassenger_accounts_table 
+                ADD COLUMN session_messages int DEFAULT 0 
+                AFTER daily_used
+            ");
+        }
     }
     
     /**
