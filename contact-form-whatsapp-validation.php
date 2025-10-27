@@ -151,6 +151,9 @@ class ContactFormWhatsAppValidation {
     public function check_database_updates() {
         // Add unique constraint for phone numbers if not exists
         $this->database->add_phone_uniqueness_constraint();
+        
+        // Update existing tables with new columns (like session_messages)
+        $this->database->update_existing_tables();
     }
     
     public function add_admin_menu() {
