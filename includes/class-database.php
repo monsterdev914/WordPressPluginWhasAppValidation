@@ -74,6 +74,7 @@ class CFWV_Database {
             otp_sent_at datetime NULL,
             otp_verified_at datetime NULL,
             otp_attempts int DEFAULT 0,
+            sender varchar(20) NULL,
             submission_ip varchar(45),
             user_agent text,
             submitted_at datetime DEFAULT CURRENT_TIMESTAMP,
@@ -82,6 +83,7 @@ class CFWV_Database {
             KEY form_id (form_id),
             KEY whatsapp_validated (whatsapp_validated),
             KEY otp_verified (otp_verified),
+            KEY sender (sender),
             KEY submitted_at (submitted_at)
         ) $charset_collate;";
         
@@ -119,6 +121,7 @@ class CFWV_Database {
             account_name varchar(255) NOT NULL,
             api_token varchar(500) NOT NULL,
             number_id varchar(100) NOT NULL,
+            whatsapp_number varchar(20) NULL,
             is_active tinyint(1) DEFAULT 1,
             daily_limit int DEFAULT 1000,
             daily_used int DEFAULT 0,
@@ -182,6 +185,46 @@ class CFWV_Database {
                 ALTER TABLE $wassenger_accounts_table 
                 ADD COLUMN session_messages int DEFAULT 0 
                 AFTER daily_used
+            ");
+        }
+        
+        // Add whatsapp_number column to wassenger_accounts table if it doesn't exist
+        $whatsapp_number_exists = $this->wpdb->get_var("
+            SELECT COUNT(*) 
+            FROM information_schema.columns 
+            WHERE table_schema = DATABASE() 
+            AND table_name = '$wassenger_accounts_table' 
+            AND column_name = 'whatsapp_number'
+        ");
+        
+        if (!$whatsapp_number_exists) {
+            $this->wpdb->query("
+                ALTER TABLE $wassenger_accounts_table 
+                ADD COLUMN whatsapp_number varchar(20) NULL 
+                AFTER number_id
+            ");
+        }
+        
+        // Add sender column to submissions table if it doesn't exist
+        $sender_exists = $this->wpdb->get_var("
+            SELECT COUNT(*) 
+            FROM information_schema.columns 
+            WHERE table_schema = DATABASE() 
+            AND table_name = '{$this->submissions_table}' 
+            AND column_name = 'sender'
+        ");
+        
+        if (!$sender_exists) {
+            $this->wpdb->query("
+                ALTER TABLE {$this->submissions_table} 
+                ADD COLUMN sender varchar(20) NULL 
+                AFTER otp_attempts
+            ");
+            
+            // Add index for sender
+            $this->wpdb->query("
+                ALTER TABLE {$this->submissions_table} 
+                ADD KEY sender (sender)
             ");
         }
     }
@@ -598,13 +641,14 @@ class CFWV_Database {
     /**
      * Add Wassenger account
      */
-    public function add_wassenger_account($account_name, $api_token, $number_id, $daily_limit = 1000) {
+    public function add_wassenger_account($account_name, $api_token, $number_id, $whatsapp_number = '', $daily_limit = 1000) {
         $wassenger_accounts_table = $this->wpdb->prefix . 'cfwv_wassenger_accounts';
         
         $data = array(
             'account_name' => $account_name,
             'api_token' => $api_token,
             'number_id' => $number_id,
+            'whatsapp_number' => $whatsapp_number,
             'daily_limit' => $daily_limit,
             'created_at' => current_time('mysql')
         );
@@ -641,6 +685,17 @@ class CFWV_Database {
     }
     
     /**
+     * Update submission with sender WhatsApp number
+     */
+    public function update_submission_sender($submission_id, $sender_number) {
+        $data = array(
+            'sender' => $sender_number
+        );
+        
+        return $this->wpdb->update($this->submissions_table, $data, array('id' => $submission_id));
+    }
+    
+    /**
      * Migrate legacy WordPress options to database accounts
      */
     public function migrate_legacy_options() {
@@ -657,6 +712,7 @@ class CFWV_Database {
                     'Migrated Account',
                     $api_token,
                     $number_id,
+                    '', // whatsapp_number (not available in legacy options)
                     1000
                 );
                 

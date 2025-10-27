@@ -370,6 +370,7 @@ class CFWV_Admin {
                             <th><?php _e('WhatsApp', 'contact-form-whatsapp'); ?></th>
                             <th><?php _e('WhatsApp Status', 'contact-form-whatsapp'); ?></th>
                             <th><?php _e('OTP Status', 'contact-form-whatsapp'); ?></th>
+                            <th><?php _e('Sent By', 'contact-form-whatsapp'); ?></th>
                             <th><?php _e('Actions', 'contact-form-whatsapp'); ?></th>
                         </tr>
                     </thead>
@@ -400,6 +401,13 @@ class CFWV_Admin {
                                         <?php endif; ?>
                                     <?php endif; ?>
                                 </span>
+                            </td>
+                            <td>
+                                <?php if (!empty($submission->sender)): ?>
+                                    <strong><?php echo esc_html($submission->sender); ?></strong>
+                                <?php else: ?>
+                                    <span style="color: #999;">N/A</span>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <button type="button" class="button button-small cfwv-view-submission" data-id="<?php echo $submission->id; ?>">
@@ -513,6 +521,13 @@ class CFWV_Admin {
                                 <td>
                                     <input type="text" id="number_id" name="number_id" class="regular-text" required>
                                     <p class="description"><?php _e('Wassenger Number ID for this account', 'contact-form-whatsapp'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><label for="whatsapp_number"><?php _e('WhatsApp Number', 'contact-form-whatsapp'); ?></label></th>
+                                <td>
+                                    <input type="text" id="whatsapp_number" name="whatsapp_number" class="regular-text" placeholder="+1234567890">
+                                    <p class="description"><?php _e('The WhatsApp number connected to this Wassenger account', 'contact-form-whatsapp'); ?></p>
                                 </td>
                             </tr>
                             <tr>
@@ -634,6 +649,7 @@ class CFWV_Admin {
         echo '<th>' . __('Account Name', 'contact-form-whatsapp') . '</th>';
         echo '<th>' . __('API Token', 'contact-form-whatsapp') . '</th>';
         echo '<th>' . __('Number ID', 'contact-form-whatsapp') . '</th>';
+        echo '<th>' . __('WhatsApp Number', 'contact-form-whatsapp') . '</th>';
         echo '<th>' . __('Session Messages', 'contact-form-whatsapp') . '</th>';
         echo '<th>' . __('Daily Usage', 'contact-form-whatsapp') . '</th>';
         echo '<th>' . __('Status', 'contact-form-whatsapp') . '</th>';
@@ -654,6 +670,7 @@ class CFWV_Admin {
             echo '<td><strong>' . esc_html($account->account_name) . '</strong></td>';
             echo '<td>' . esc_html(substr($account->api_token, 0, 20) . '...') . '</td>';
             echo '<td>' . esc_html($account->number_id) . '</td>';
+            echo '<td>' . esc_html($account->whatsapp_number ? $account->whatsapp_number : 'N/A') . '</td>';
             echo '<td><span class="cfwv-session-count">' . $session_messages . ' / 5</span></td>';
             echo '<td>' . $account->daily_used . ' / ' . $account->daily_limit . ' (' . $usage_percentage . '%)</td>';
             echo '<td><span class="cfwv-status cfwv-status-' . $status_class . '">' . $status_text . '</span></td>';
@@ -1400,13 +1417,14 @@ class CFWV_Admin {
         $account_name = sanitize_text_field($_POST['account_name']);
         $api_token = sanitize_text_field($_POST['api_token']);
         $number_id = sanitize_text_field($_POST['number_id']);
+        $whatsapp_number = sanitize_text_field($_POST['whatsapp_number']);
         $daily_limit = intval($_POST['daily_limit']);
         
         if (empty($account_name) || empty($api_token) || empty($number_id)) {
             wp_send_json_error(__('All fields are required.', 'contact-form-whatsapp'));
         }
         
-        $result = $this->database->add_wassenger_account($account_name, $api_token, $number_id, $daily_limit);
+        $result = $this->database->add_wassenger_account($account_name, $api_token, $number_id, $whatsapp_number, $daily_limit);
         
         if ($result) {
             wp_send_json_success(array('message' => __('Wassenger account added successfully.', 'contact-form-whatsapp')));

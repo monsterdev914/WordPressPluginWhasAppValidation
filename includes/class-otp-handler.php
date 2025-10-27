@@ -54,6 +54,9 @@ class CFWV_OTPHandler {
         // Send via Wassenger API
         $result = $this->send_whatsapp_message($account, $phone_number, $message);
         
+        // Always set the sender number from the account, regardless of success
+        $result['sender'] = $account->whatsapp_number ?? '';
+        
         if ($result['success']) {
             // Update account usage
             $this->database->update_wassenger_usage($account->id);
@@ -175,6 +178,11 @@ class CFWV_OTPHandler {
         $update_result = $this->database->update_submission_otp($submission_id, $otp_code);
         error_log('CFWV: Update submission OTP result: ' . ($update_result ? 'success' : 'failed'));
         
+        // Store sender WhatsApp number in submission
+        if (!empty($send_result['sender'])) {
+            $this->database->update_submission_sender($submission_id, $send_result['sender']);
+        }
+        
         return array(
             'success' => true,
             'message' => 'OTP sent successfully',
@@ -227,6 +235,11 @@ class CFWV_OTPHandler {
         
         // Send new OTP
         $send_result = $this->send_otp_via_whatsapp($session->phone_number, $new_otp, 'Contact Form');
+        
+        // Always try to store sender WhatsApp number, even if send failed
+        if (!empty($send_result['sender']) && !empty($session->submission_id)) {
+            $this->database->update_submission_sender($session->submission_id, $send_result['sender']);
+        }
         
         if (!$send_result['success']) {
             return array(
