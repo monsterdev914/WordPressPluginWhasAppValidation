@@ -807,9 +807,10 @@ input[type="submit"].saving {
     color: #333;
 }
 
-.cfwv-session-count:contains("5") {
+.cfwv-session-limit {
     background: #ffebcd;
     color: #8b4513;
+    font-weight: bold;
 }
 
 /* Accounts actions */
