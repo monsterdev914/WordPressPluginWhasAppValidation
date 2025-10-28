@@ -51,16 +51,15 @@ class CFWV_OTPHandler {
         $message .= "This code will expire in 10 minutes.\n";
         $message .= "If you didn't request this code, please ignore this message.";
         
+        // Always increment usage counters when attempting to send
+        // This ensures consistent round-robin behavior regardless of API response
+        $this->database->update_wassenger_usage($account->id);
+        
         // Send via Wassenger API
         $result = $this->send_whatsapp_message($account, $phone_number, $message);
         
         // Always set the sender number from the account, regardless of success
         $result['sender'] = $account->whatsapp_number ?? '';
-        
-        if ($result['success']) {
-            // Update account usage
-            $this->database->update_wassenger_usage($account->id);
-        }
         
         return $result;
     }
@@ -79,7 +78,8 @@ class CFWV_OTPHandler {
             ),
             'body' => json_encode(array(
                 'phone' => $phone_number,
-                'message' => $message
+                'message' => $message,
+                'device' => $account->number_id
             )),
             'timeout' => 30
         );

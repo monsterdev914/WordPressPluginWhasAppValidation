@@ -639,7 +639,7 @@ class CFWV_Admin {
         echo __('Reset Session Messages', 'contact-form-whatsapp');
         echo '</button>';
         echo '<span class="cfwv-reset-info" style="margin-left: 10px; color: #666; font-size: 13px;">';
-        echo __('Round-robin switches accounts after 5 messages', 'contact-form-whatsapp');
+        echo sprintf(__('Round-robin switches accounts after %d messages', 'contact-form-whatsapp'), CFWV_Database::SESSION_MESSAGE_LIMIT);
         echo '</span>';
         echo '</div>';
         
@@ -665,13 +665,14 @@ class CFWV_Admin {
             
             // Safely get session_messages with fallback
             $session_messages = isset($account->session_messages) ? $account->session_messages : 0;
+            $session_class = ($session_messages >= CFWV_Database::SESSION_MESSAGE_LIMIT) ? 'cfwv-session-count cfwv-session-limit' : 'cfwv-session-count';
             
             echo '<tr>';
             echo '<td><strong>' . esc_html($account->account_name) . '</strong></td>';
             echo '<td>' . esc_html(substr($account->api_token, 0, 20) . '...') . '</td>';
             echo '<td>' . esc_html($account->number_id) . '</td>';
             echo '<td>' . esc_html($account->whatsapp_number ? $account->whatsapp_number : 'N/A') . '</td>';
-            echo '<td><span class="cfwv-session-count">' . $session_messages . ' / 5</span></td>';
+            echo '<td><span class="' . $session_class . '">' . $session_messages . ' / ' . CFWV_Database::SESSION_MESSAGE_LIMIT . '</span></td>';
             echo '<td>' . $account->daily_used . ' / ' . $account->daily_limit . ' (' . $usage_percentage . '%)</td>';
             echo '<td><span class="cfwv-status cfwv-status-' . $status_class . '">' . $status_text . '</span></td>';
             echo '<td>';

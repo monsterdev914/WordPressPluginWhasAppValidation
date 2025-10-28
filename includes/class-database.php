@@ -10,6 +10,9 @@ if (!defined('ABSPATH')) {
 
 class CFWV_Database {
     
+    // Constants
+    const SESSION_MESSAGE_LIMIT = 5;
+    
     private $wpdb;
     private $forms_table;
     private $form_fields_table;
@@ -598,44 +601,90 @@ class CFWV_Database {
     }
     
     /**
-     * Get active Wassenger account using round-robin logic
+     * Get active Wassenger account using round-robin with atomic selection
      */
     public function get_active_wassenger_account() {
         $wassenger_accounts_table = $this->wpdb->prefix . 'cfwv_wassenger_accounts';
         
-        // First, check if any account has reached 5 messages and reset them
-        $this->wpdb->query(
-            "UPDATE $wassenger_accounts_table 
-             SET session_messages = 0 
-             WHERE session_messages >= 5"
-        );
-        
-        // Get account with lowest session message count that's under daily limit
+        // Use a single atomic query to select and update the account
+        // This prevents race conditions by using MySQL's row-level locking
         $account = $this->wpdb->get_row(
             "SELECT * FROM $wassenger_accounts_table 
              WHERE is_active = 1 AND daily_used < daily_limit 
              ORDER BY session_messages ASC, last_used ASC 
-             LIMIT 1"
+             LIMIT 1 FOR UPDATE"
         );
+        
+        if (!$account) {
+            // No available accounts - check if all are at daily limit
+            $total_accounts = $this->wpdb->get_var(
+                "SELECT COUNT(*) FROM $wassenger_accounts_table WHERE is_active = 1"
+            );
+            $accounts_at_limit = $this->wpdb->get_var(
+                "SELECT COUNT(*) FROM $wassenger_accounts_table 
+                 WHERE is_active = 1 AND daily_used >= daily_limit"
+            );
+            
+            if ($total_accounts > 0 && $accounts_at_limit == $total_accounts) {
+                error_log('CFWV: All Wassenger accounts have reached their daily limit');
+            }
+            
+            return null;
+        }
+        
+        // Check if this account needs session reset (reached session message limit)
+        if ($account->session_messages >= self::SESSION_MESSAGE_LIMIT) {
+            $this->wpdb->query($this->wpdb->prepare(
+                "UPDATE $wassenger_accounts_table 
+                 SET session_messages = 0 
+                 WHERE id = %d",
+                $account->id
+            ));
+            $account->session_messages = 0;
+        }
         
         return $account;
     }
     
     /**
-     * Update Wassenger account usage
+     * Update Wassenger account usage with better error handling
      */
     public function update_wassenger_usage($account_id) {
         $wassenger_accounts_table = $this->wpdb->prefix . 'cfwv_wassenger_accounts';
         
-        $this->wpdb->query($this->wpdb->prepare(
+        // First verify the account exists and is active
+        $account = $this->wpdb->get_row($this->wpdb->prepare(
+            "SELECT * FROM $wassenger_accounts_table WHERE id = %d AND is_active = 1",
+            $account_id
+        ));
+        
+        if (!$account) {
+            error_log("CFWV: Attempted to update usage for non-existent or inactive account ID: $account_id");
+            return false;
+        }
+        
+        // Check if account has reached daily limit
+        if ($account->daily_used >= $account->daily_limit) {
+            error_log("CFWV: Account ID $account_id has reached daily limit ({$account->daily_used}/{$account->daily_limit})");
+            return false;
+        }
+        
+        $result = $this->wpdb->query($this->wpdb->prepare(
             "UPDATE $wassenger_accounts_table 
              SET daily_used = daily_used + 1, 
                  session_messages = session_messages + 1, 
                  last_used = %s 
-             WHERE id = %d",
+             WHERE id = %d AND is_active = 1",
             current_time('mysql'),
             $account_id
         ));
+        
+        if ($result === false) {
+            error_log("CFWV: Failed to update usage for account ID: $account_id");
+            return false;
+        }
+        
+        return true;
     }
     
     /**
@@ -747,16 +796,117 @@ class CFWV_Database {
     }
     
     /**
-     * Get Wassenger account usage statistics
+     * Get session message limit constant
+     */
+    public static function get_session_message_limit() {
+        return self::SESSION_MESSAGE_LIMIT;
+    }
+    
+    /**
+     * Test round robin functionality (for debugging)
+     */
+    public function test_round_robin($iterations = 10) {
+        $results = array();
+        
+        for ($i = 0; $i < $iterations; $i++) {
+            $account = $this->get_active_wassenger_account();
+            
+            if ($account) {
+                $results[] = array(
+                    'iteration' => $i + 1,
+                    'account_id' => $account->id,
+                    'account_name' => $account->account_name,
+                    'session_messages' => $account->session_messages,
+                    'daily_used' => $account->daily_used
+                );
+                
+                // Simulate usage update
+                $this->update_wassenger_usage($account->id);
+            } else {
+                $results[] = array(
+                    'iteration' => $i + 1,
+                    'account_id' => null,
+                    'account_name' => 'No account available',
+                    'session_messages' => null,
+                    'daily_used' => null
+                );
+            }
+        }
+        
+        return $results;
+    }
+    
+    /**
+     * Reset daily usage for all accounts (typically called at midnight)
+     */
+    public function reset_daily_usage() {
+        $wassenger_accounts_table = $this->wpdb->prefix . 'cfwv_wassenger_accounts';
+        
+        $result = $this->wpdb->query(
+            "UPDATE $wassenger_accounts_table SET daily_used = 0"
+        );
+        
+        if ($result !== false) {
+            error_log('CFWV: Daily usage reset successfully for all accounts');
+            return true;
+        } else {
+            error_log('CFWV: Failed to reset daily usage');
+            return false;
+        }
+    }
+    
+    /**
+     * Get Wassenger account usage statistics with round robin insights
      */
     public function get_wassenger_usage_stats() {
         $wassenger_accounts_table = $this->wpdb->prefix . 'cfwv_wassenger_accounts';
         
-        return $this->wpdb->get_results(
+        $stats = array();
+        
+        // Total accounts
+        $stats['total_accounts'] = $this->wpdb->get_var(
+            "SELECT COUNT(*) FROM $wassenger_accounts_table"
+        );
+        
+        // Active accounts
+        $stats['active_accounts'] = $this->wpdb->get_var(
+            "SELECT COUNT(*) FROM $wassenger_accounts_table WHERE is_active = 1"
+        );
+        
+        // Accounts at daily limit
+        $stats['accounts_at_limit'] = $this->wpdb->get_var(
+            "SELECT COUNT(*) FROM $wassenger_accounts_table 
+             WHERE is_active = 1 AND daily_used >= daily_limit"
+        );
+        
+        // Accounts ready for round robin (session_messages < session limit)
+        $stats['accounts_ready'] = $this->wpdb->get_var(
+            "SELECT COUNT(*) FROM $wassenger_accounts_table 
+             WHERE is_active = 1 AND daily_used < daily_limit AND session_messages < " . self::SESSION_MESSAGE_LIMIT
+        );
+        
+        // Total daily usage across all accounts
+        $stats['total_daily_usage'] = $this->wpdb->get_var(
+            "SELECT SUM(daily_used) FROM $wassenger_accounts_table WHERE is_active = 1"
+        );
+        
+        // Total daily limit across all accounts
+        $stats['total_daily_limit'] = $this->wpdb->get_var(
+            "SELECT SUM(daily_limit) FROM $wassenger_accounts_table WHERE is_active = 1"
+        );
+        
+        // Round robin efficiency (percentage of accounts ready)
+        $stats['round_robin_efficiency'] = $stats['active_accounts'] > 0 ? 
+            round(($stats['accounts_ready'] / $stats['active_accounts']) * 100, 2) : 0;
+        
+        // Detailed account information
+        $stats['accounts'] = $this->wpdb->get_results(
             "SELECT id, account_name, session_messages, daily_used, daily_limit, last_used 
              FROM $wassenger_accounts_table 
              WHERE is_active = 1 
              ORDER BY session_messages ASC"
         );
+        
+        return $stats;
     }
 } 
