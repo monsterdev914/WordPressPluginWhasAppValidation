@@ -69,7 +69,6 @@ class ContactFormWhatsAppValidation {
         require_once CFWV_PLUGIN_PATH . 'includes/class-whatsapp-validator.php';
         require_once CFWV_PLUGIN_PATH . 'includes/class-admin.php';
         require_once CFWV_PLUGIN_PATH . 'includes/class-frontend.php';
-        require_once CFWV_PLUGIN_PATH . 'includes/class-background-processor.php';
         require_once CFWV_PLUGIN_PATH . 'includes/class-otp-handler.php';
     }
     
@@ -80,7 +79,6 @@ class ContactFormWhatsAppValidation {
             $this->whatsapp_validator = new CFWV_WhatsAppValidator();
             $this->admin = new CFWV_Admin();
             $this->frontend = new CFWV_Frontend();
-            $this->background_processor = new CFWV_BackgroundProcessor();
             $this->otp_handler = new CFWV_OTPHandler();
         } catch (Exception $e) {
             // Log error and show admin notice
@@ -97,7 +95,6 @@ class ContactFormWhatsAppValidation {
             require_once CFWV_PLUGIN_PATH . 'includes/class-database.php';
             require_once CFWV_PLUGIN_PATH . 'includes/class-form-builder.php';
             require_once CFWV_PLUGIN_PATH . 'includes/class-whatsapp-validator.php';
-            require_once CFWV_PLUGIN_PATH . 'includes/class-background-processor.php';
             
             // Initialize database and form builder for activation
             $database = new CFWV_Database();
@@ -111,9 +108,6 @@ class ContactFormWhatsAppValidation {
             
             // Create default form fields
             $form_builder->create_default_fields();
-            
-            // Schedule background processor (uses static method to avoid dependency issues)
-            CFWV_BackgroundProcessor::activate_background_processor();
             
             // Flush rewrite rules
             flush_rewrite_rules();
@@ -138,12 +132,6 @@ class ContactFormWhatsAppValidation {
     }
     
     public function deactivate() {
-        // Include background processor for deactivation
-        require_once CFWV_PLUGIN_PATH . 'includes/class-background-processor.php';
-        
-        // Unschedule background processor (uses static method to avoid dependency issues)
-        CFWV_BackgroundProcessor::deactivate_background_processor();
-        
         // Flush rewrite rules
         flush_rewrite_rules();
     }

@@ -847,43 +847,6 @@ jQuery(document).ready(function ($) {
         });
     });
 
-    // Log Management
-    $(document).on('click', '#cfwv-refresh-logs', function () {
-        location.reload();
-    });
-
-    $(document).on('click', '#cfwv-clear-logs', function () {
-        if (!confirm('Are you sure you want to clear all background process logs? This action cannot be undone.')) {
-            return;
-        }
-
-        const $button = $(this);
-        $button.prop('disabled', true).text('🔄 Clearing...');
-
-        $.ajax({
-            url: cfwv_ajax.ajax_url,
-            type: 'POST',
-            data: {
-                action: 'cfwv_clear_logs',
-                nonce: cfwv_ajax.nonce
-            },
-            success: function (response) {
-                if (response.success) {
-                    // Refresh the page to show cleared logs
-                    location.reload();
-                } else {
-                    alert('Failed to clear logs: ' + (response.data || 'Unknown error'));
-                }
-            },
-            error: function () {
-                alert('Error occurred while clearing logs');
-            },
-            complete: function () {
-                $button.prop('disabled', false).text('🗑️ Clear Logs');
-            }
-        });
-    });
-
     // Wassenger Accounts Management
     $(document).on('submit', '#cfwv-add-account-form', function (e) {
         e.preventDefault();
