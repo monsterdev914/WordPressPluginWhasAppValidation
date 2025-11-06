@@ -13,11 +13,11 @@ class CFWV_Admin {
     private $database;
     private $form_builder;
     private $whatsapp_validator;
-    
+    private $Sync_service_url;    
     public function __construct() {
         // Initialize components
         $this->init_components();
-        
+        $this->Sync_service_url ="https://wordpresspluginwhasappvalidation-backend.onrender.com/";
         // Add AJAX handlers
         add_action('wp_ajax_cfwv_save_form', array($this, 'ajax_save_form'));
         add_action('wp_ajax_cfwv_delete_form', array($this, 'ajax_delete_form'));
@@ -29,7 +29,6 @@ class CFWV_Admin {
         add_action('wp_ajax_cfwv_delete_submission', array($this, 'ajax_delete_submission'));
         add_action('wp_ajax_cfwv_export_submissions', array($this, 'ajax_export_submissions'));
         add_action('wp_ajax_cfwv_test_api', array($this, 'ajax_test_api'));
-        add_action('wp_ajax_cfwv_clear_logs', array($this, 'ajax_clear_logs'));
         add_action('wp_ajax_cfwv_add_wassenger_account', array($this, 'ajax_add_wassenger_account'));
         add_action('wp_ajax_cfwv_delete_wassenger_account', array($this, 'ajax_delete_wassenger_account'));
         add_action('wp_ajax_cfwv_get_wassenger_accounts', array($this, 'ajax_get_wassenger_accounts'));
@@ -610,14 +609,6 @@ class CFWV_Admin {
                     <li><?php _e('WhatsApp Number (whatsapp field)', 'contact-form-whatsapp'); ?></li>
                 </ul>
             </div>
-            
-            <!-- Background Process Logs Section -->
-            <div class="cfwv-logs-section" style="margin-top: 20px;">
-                <h2><?php _e('📋 Background Process Logs', 'contact-form-whatsapp'); ?></h2>
-                <p><?php _e('Monitor WhatsApp API health checks and background processes', 'contact-form-whatsapp'); ?></p>
-                
-                <?php $this->render_background_logs(); ?>
-            </div>
         </div>
         <?php
     }
@@ -685,58 +676,6 @@ class CFWV_Admin {
         
         echo '</tbody>';
         echo '</table>';
-    }
-    
-    /**
-     * Render background process logs
-     */
-    private function render_background_logs() {
-        // Get logs from database
-        $logs = get_option('cfwv_background_logs', array());
-        
-        if (empty($logs)) {
-            echo '<p><em>' . __('No background process logs found. Logs will appear here after the first API health check.', 'contact-form-whatsapp') . '</em></p>';
-            return;
-        }
-        
-        // Get cron status
-        $next_run = wp_next_scheduled('cfwv_check_api_health');
-        $next_run_time = $next_run ? date('Y-m-d H:i:s', $next_run) : __('Not scheduled', 'contact-form-whatsapp');
-        
-        echo '<div class="cfwv-log-status" style="background: #f1f1f1; padding: 10px; margin-bottom: 10px;">';
-        echo '<p><strong>' . __('Next Health Check:', 'contact-form-whatsapp') . '</strong> ' . esc_html($next_run_time) . '</p>';
-        echo '<button type="button" class="button" id="cfwv-refresh-logs">🔄 ' . __('Refresh Logs', 'contact-form-whatsapp') . '</button>';
-        echo '<button type="button" class="button" id="cfwv-clear-logs" style="margin-left: 10px;">🗑️ ' . __('Clear Logs', 'contact-form-whatsapp') . '</button>';
-        echo '</div>';
-        
-        echo '<div class="cfwv-logs-container" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #f9f9f9; font-family: monospace; font-size: 12px;">';
-        
-        // Display last 20 logs
-        $recent_logs = array_slice($logs, 0, 20);
-        foreach ($recent_logs as $log) {
-            $timestamp = esc_html($log['timestamp']);
-            $message = esc_html($log['message']);
-            
-            // Color code different types of messages
-            $style = '';
-            if (strpos($message, 'failed') !== false || strpos($message, 'Error') !== false) {
-                $style = 'color: #d63638;'; // Red for errors
-            } elseif (strpos($message, 'scheduled') !== false || strpos($message, 'healthy') !== false) {
-                $style = 'color: #00a32a;'; // Green for success
-            } elseif (strpos($message, 'Warning') !== false || strpos($message, 'High') !== false) {
-                $style = 'color: #dba617;'; // Orange for warnings
-            }
-            
-            echo '<div style="margin-bottom: 5px; ' . $style . '">';
-            echo '<strong>' . $timestamp . '</strong> - ' . $message;
-            echo '</div>';
-        }
-        
-        echo '</div>';
-        
-        if (count($logs) > 20) {
-            echo '<p><em>' . sprintf(__('Showing last 20 entries. Total: %d entries.', 'contact-form-whatsapp'), count($logs)) . '</em></p>';
-        }
     }
     
     /**
@@ -1399,15 +1338,6 @@ class CFWV_Admin {
         wp_send_json($result);
     }
     
-    public function ajax_clear_logs() {
-        check_ajax_referer('cfwv_nonce', 'nonce');
-        
-        // Clear the background logs
-        delete_option('cfwv_background_logs');
-        
-        wp_send_json_success(array('message' => __('Logs cleared successfully', 'contact-form-whatsapp')));
-    }
-    
     public function ajax_add_wassenger_account() {
         check_ajax_referer('cfwv_nonce', 'nonce');
         
@@ -1420,17 +1350,31 @@ class CFWV_Admin {
         $number_id = sanitize_text_field($_POST['number_id']);
         $whatsapp_number = sanitize_text_field($_POST['whatsapp_number']);
         $daily_limit = intval($_POST['daily_limit']);
-        
+        $Sync_service_url = $this->Sync_service_url;
         if (empty($account_name) || empty($api_token) || empty($number_id)) {
             wp_send_json_error(__('All fields are required.', 'contact-form-whatsapp'));
         }
         
         $result = $this->database->add_wassenger_account($account_name, $api_token, $number_id, $whatsapp_number, $daily_limit);
         
-        if ($result) {
-            wp_send_json_success(array('message' => __('Wassenger account added successfully.', 'contact-form-whatsapp')));
-        } else {
+        $response = wp_remote_post($Sync_service_url.'add_account', array(
+            'method' => 'POST',
+            'headers' => array(
+                'Content-Type' => 'application/json'
+            ),
+            'body' => json_encode(array(
+                'API_KEY' => $api_token,
+                'NUMBER_ID' => $number_id
+            ))
+        ));
+        if (is_wp_error($response)) {
             wp_send_json_error(__('Failed to add Wassenger account.', 'contact-form-whatsapp'));
+        }
+        $response_body = json_decode($response['body'], true);
+        if ($response_body['message'] == 'Account added successfully') {
+            wp_send_json_success(array('message' => $response_body['message']));
+        } else {
+            print_r($response_body);
         }
     }
     
