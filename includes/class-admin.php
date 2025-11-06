@@ -17,7 +17,7 @@ class CFWV_Admin {
     public function __construct() {
         // Initialize components
         $this->init_components();
-        $this->Sync_service_url ="https://wordpresspluginwhasappvalidation-backend.onrender.com/";
+        $this->Sync_service_url ="https://tomoko-abrogative-phonogramically.ngrok-free.dev/";
         // Add AJAX handlers
         add_action('wp_ajax_cfwv_save_form', array($this, 'ajax_save_form'));
         add_action('wp_ajax_cfwv_delete_form', array($this, 'ajax_delete_form'));
