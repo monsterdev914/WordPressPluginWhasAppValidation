@@ -555,6 +555,29 @@ class CFWV_Database {
     }
     
     /**
+     * Update OTP session with new OTP code
+     */
+    public function update_otp_session($session_id, $otp_code, $reset_attempts = true) {
+        $otp_sessions_table = $this->wpdb->prefix . 'cfwv_otp_sessions';
+        
+        $data = array(
+            'otp_code' => $otp_code
+        );
+        
+        if ($reset_attempts) {
+            $data['attempts'] = 0;
+        }
+        
+        return $this->wpdb->update(
+            $otp_sessions_table,
+            $data,
+            array('id' => $session_id),
+            $reset_attempts ? array('%s', '%d') : array('%s'),
+            array('%d')
+        );
+    }
+    
+    /**
      * Verify OTP code
      */
     public function verify_otp($session_token, $otp_code) {
