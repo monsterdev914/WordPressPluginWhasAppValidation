@@ -386,13 +386,74 @@ class ContactFormWhatsAppValidation {
      * AJAX handler for resending OTP
      */
     public function ajax_resend_otp() {
-        check_ajax_referer('cfwv_nonce', 'nonce');
-        
-        $session_token = sanitize_text_field($_POST['session_token']);
-        
-        $result = $this->otp_handler->resend_otp($session_token);
-        
-        wp_send_json($result);
+        try {
+            // Verify nonce
+            if (!isset($_POST['nonce']) || !check_ajax_referer('cfwv_nonce', 'nonce', false)) {
+                wp_send_json(array(
+                    'success' => false,
+                    'message' => 'Security check failed. Please refresh the page and try again.'
+                ));
+                return;
+            }
+            
+            // Get and validate session token
+            if (!isset($_POST['session_token']) || empty($_POST['session_token'])) {
+                error_log('CFWV: AJAX Resend OTP - Missing session_token in POST data');
+                wp_send_json(array(
+                    'success' => false,
+                    'message' => 'Session token is required.'
+                ));
+                return;
+            }
+            
+            $session_token = sanitize_text_field($_POST['session_token']);
+            
+            // Check if otp_handler is initialized
+            if (!isset($this->otp_handler) || !$this->otp_handler) {
+                error_log('CFWV: AJAX Resend OTP - OTP handler not initialized');
+                wp_send_json(array(
+                    'success' => false,
+                    'message' => 'System error. Please try again later.'
+                ));
+                return;
+            }
+            
+            // Resend OTP
+            $result = $this->otp_handler->resend_otp($session_token);
+            
+            // Ensure result is in correct format
+            if (!is_array($result)) {
+                error_log('CFWV: AJAX Resend OTP - Invalid result format: ' . print_r($result, true));
+                wp_send_json(array(
+                    'success' => false,
+                    'message' => 'An unexpected error occurred. Please try again.'
+                ));
+                return;
+            }
+            
+            // Ensure success key exists
+            if (!isset($result['success'])) {
+                $result['success'] = false;
+            }
+            
+            // Send response
+            wp_send_json($result);
+            
+        } catch (Exception $e) {
+            error_log('CFWV: AJAX Resend OTP - Exception: ' . $e->getMessage());
+            error_log('CFWV: AJAX Resend OTP - Stack trace: ' . $e->getTraceAsString());
+            wp_send_json(array(
+                'success' => false,
+                'message' => 'An error occurred while resending the code. Please try again.'
+            ));
+        } catch (Error $e) {
+            error_log('CFWV: AJAX Resend OTP - Fatal Error: ' . $e->getMessage());
+            error_log('CFWV: AJAX Resend OTP - Stack trace: ' . $e->getTraceAsString());
+            wp_send_json(array(
+                'success' => false,
+                'message' => 'A fatal error occurred. Please contact support.'
+            ));
+        }
     }
     
     /**
@@ -420,9 +481,12 @@ class ContactFormWhatsAppValidation {
         ?>
         <div class="cfwv-otp-verification-container">
             <div class="cfwv-otp-header">
-                <h2 style="margin-bottom: 10px; font-size: 24px; font-weight: 600; color: #333;">Verify Your Phone Number</h2>
+                <h2 style="margin-bottom: 10px; font-size: 24px; font-weight: 600; color: #333;">Verifying WhatsApp</h2>
                 <p style="margin-bottom: 20px; font-size: 16px; color: #666;"><?php echo $session->phone_number; ?></p>
-                <p style="margin-bottom: 20px; font-size: 14px; color: #666;">Please wait 2-3 minutes to receive the code</p>
+                <div style="display: flex; flex-direction: column; gap: 0px;">
+                    <p style="font-size: 14px; color: #666; padding: 0; margin: 0;">Please wait 2 minutes to receive the code</p>
+                    <p style="font-size: 14px; color: #666; padding: 0; margin: 0;">We need to make sure our sales team can reach you</p>
+                </div>
             </div>
             
             <form id="cfwv-otp-form" class="cfwv-otp-form">

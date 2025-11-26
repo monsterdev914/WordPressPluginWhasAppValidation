@@ -209,49 +209,75 @@ class CFWV_OTPHandler {
      * Resend OTP
      */
     public function resend_otp($session_token) {
-        $session = $this->get_otp_session($session_token);
-        
-        if (!$session) {
+        try {
+            // Validate session token
+            if (empty($session_token)) {
+                error_log('CFWV: Resend OTP - Empty session token');
+                return array(
+                    'success' => false,
+                    'message' => 'Invalid session token'
+                );
+            }
+            
+            // Get session
+            $session = $this->get_otp_session($session_token);
+            
+            if (!$session) {
+                error_log('CFWV: Resend OTP - Session not found for token: ' . $session_token);
+                return array(
+                    'success' => false,
+                    'message' => 'Invalid or expired session'
+                );
+            }
+            
+            error_log('CFWV: Resend OTP - Session found, ID: ' . $session->id . ', Phone: ' . $session->phone_number);
+            
+            // Generate new OTP
+            $new_otp = $this->generate_otp();
+            error_log('CFWV: Resend OTP - Generated new OTP: ' . $new_otp);
+            
+            // Update session with new OTP
+            $update_result = $this->database->update_otp_session($session->id, $new_otp, true);
+            
+            if ($update_result === false) {
+                error_log('CFWV: Resend OTP - Database update failed');
+                return array(
+                    'success' => false,
+                    'message' => 'Failed to update session. Please try again.'
+                );
+            }
+            
+            error_log('CFWV: Resend OTP - Session updated successfully');
+            
+            // Update submission with new OTP code and sent timestamp
+            if (!empty($session->submission_id)) {
+                $this->database->update_submission_otp($session->submission_id, $new_otp);
+                error_log('CFWV: Resend OTP - Submission OTP updated');
+            }
+            
+            // Send new OTP
+            $send_result = $this->send_otp_via_whatsapp($session->phone_number, $new_otp, 'Contact Form');
+            error_log('CFWV: Resend OTP - Send result: ' . print_r($send_result, true));
+            
+            // Always try to store sender WhatsApp number, even if send failed
+            if (!empty($send_result['sender']) && !empty($session->submission_id)) {
+                $this->database->update_submission_sender($session->submission_id, $send_result['sender']);
+            }
+            
+
+            return array(
+                'success' => true,
+                'message' => 'OTP resent successfully'
+            );
+            
+        } catch (Exception $e) {
+            error_log('CFWV: Resend OTP - Exception: ' . $e->getMessage());
+            error_log('CFWV: Resend OTP - Stack trace: ' . $e->getTraceAsString());
             return array(
                 'success' => false,
-                'message' => 'Invalid or expired session'
+                'message' => 'An error occurred while resending the code. Please try again.'
             );
         }
-        
-        // Generate new OTP
-        $new_otp = $this->generate_otp();
-        
-        // Update session with new OTP
-        $otp_sessions_table = $this->database->wpdb->prefix . 'cfwv_otp_sessions';
-        $this->database->wpdb->update(
-            $otp_sessions_table,
-            array(
-                'otp_code' => $new_otp,
-                'otp_sent_at' => current_time('mysql'),
-                'attempts' => 0
-            ),
-            array('id' => $session->id)
-        );
-        
-        // Send new OTP
-        $send_result = $this->send_otp_via_whatsapp($session->phone_number, $new_otp, 'Contact Form');
-        
-        // Always try to store sender WhatsApp number, even if send failed
-        if (!empty($send_result['sender']) && !empty($session->submission_id)) {
-            $this->database->update_submission_sender($session->submission_id, $send_result['sender']);
-        }
-        
-        if (!$send_result['success']) {
-            return array(
-                'success' => false,
-                'message' => $send_result['message']
-            );
-        }
-        
-        return array(
-            'success' => true,
-            'message' => 'OTP resent successfully'
-        );
     }
     
     /**
